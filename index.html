@@ -1,0 +1,1584 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daily Pulse</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --bg: #0b0f14;
+      --panel: #0f1621;
+      --panel2:#0b1220;
+      --border:#1f2a37;
+      --text:#e8eef6;
+      --muted:#9fb0c9;
+      --muted2:#b7c3d6;
+      --shadow: 0 18px 70px rgba(0,0,0,.32);
+      --accent1:#2b6cb0;
+      --accent2:#7c3aed;
+      --good:#22c55e;
+      --danger:#ef4444;
+      --chip:#0b1220;
+    }
+
+    html[data-theme="light"]{
+      --bg:#f6f8fc;
+      --panel:#ffffff;
+      --panel2:#f1f5ff;
+      --border:#dbe5f2;
+      --text:#0b1220;
+      --muted:#516279;
+      --muted2:#3b4a5f;
+      --shadow: 0 18px 70px rgba(17,24,39,.10);
+      --chip:#ffffff;
+    }
+
+    body{ margin:0; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+    header{
+      padding:12px 14px; border-bottom:1px solid var(--border);
+      position: sticky; top:0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .wrap{ max-width: 1100px; margin:0 auto; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .muted{ color:var(--muted); font-size:12px; }
+    .pill{ font-size:12px; border:1px solid color-mix(in srgb, var(--accent1) 30%, var(--border)); padding:6px 10px; border-radius:999px; background:var(--chip); }
+
+    input, select, button, textarea{
+      background:var(--panel2); color:var(--text); border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1));
+      border-radius:12px; padding:10px 12px; outline:none;
+    }
+    input[type="date"]{ padding:9px 10px; }
+    button{ cursor:pointer; border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1)); }
+    button:hover{ filter: brightness(1.08); }
+    .danger{ border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
+    .smallbtn{ padding:8px 10px; font-size:12px; border-radius:12px; }
+
+    .tabs{
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      display:flex;
+      gap:6px;
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:6px;
+      z-index: 30;
+      box-shadow: 0 18px 70px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      max-width: 720px;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+    .tab{
+      flex:1;
+      padding:10px 6px;
+      border-radius:14px;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--muted);
+      font-weight:800;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-width: 0;
+    }
+    .tab .ico{ font-size:16px; line-height:1; }
+    .tab .lbl{ display:none; }
+    .tab.active{
+      background:var(--panel2);
+      border-color:color-mix(in srgb, var(--accent1) 30%, var(--border));
+      color:var(--text);
+    }
+    .section{ display:none; }
+    .section.active{ display:block; animation: fadeIn .18s ease-out; }
+    @keyframes fadeIn{ from{opacity:.35; transform: translateY(2px);} to{opacity:1; transform: translateY(0);} }
+
+    /* Desktop (Mac): show BOTH Today + Stats, hide tabs */
+    @media (min-width: 900px){
+      .tabs{ display:none; }
+      .section{ display:block; }
+      .section.active{ display:block; }
+      .page{ padding-bottom: 28px; }
+    }
+
+    /* Make KPIs less cramped on phones */
+    .kpi-grid{ grid-template-columns: 1fr; }
+    @media (min-width: 520px){ .kpi-grid{ grid-template-columns: repeat(2, 1fr); } }
+
+    /* Make FAB obvious */
+    .fab{
+      background: linear-gradient(135deg, #1f3b73, #2b6cb0);
+      color:#fff;
+      font-weight:900;
+    }
+
+    /* Mobile-first layout */
+    .page{
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 12px 120px; /* bottom space for FAB and bottom bar */
+      min-height: calc(100vh - 64px);
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      align-items:center;
+      box-sizing:border-box;
+    }
+
+    .card{
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      background:var(--panel); border:1px solid var(--border); border-radius:16px;
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+
+    h1{ margin:0; font-size:15px; }
+    h2{ margin: 6px 0 10px 0; font-size:18px; }
+    h3{ margin: 0 0 8px 0; font-size: 14px; color:#cfe0f8; }
+
+    /* Checklist */
+    .checklist { display:grid; gap:10px; margin-top: 10px; }
+    .item{
+      display:flex; gap:12px; align-items:center;
+      padding:12px;
+      border:1px solid var(--border); border-radius:14px; background:var(--panel2);
+    }
+    .tick{
+      width:28px; height:28px; border-radius:12px;
+      display:grid; place-items:center;
+      border:1px solid color-mix(in srgb, var(--accent1) 30%, var(--border)); user-select:none;
+      font-size:16px;
+      flex: 0 0 28px;
+    }
+    .icon{
+      width:34px; height:34px; border-radius:14px;
+      display:grid; place-items:center;
+      background: color-mix(in srgb, var(--accent1) 16%, var(--panel2));
+      border: 1px solid color-mix(in srgb, var(--accent1) 30%, var(--border));
+      font-size: 16px;
+      flex: 0 0 34px;
+    }
+    .item.done .tick{ border-color:#3b6a3b; }
+    .title{ flex:1; font-weight:700; font-size:14px; }
+    .sub{ font-size:12px; color:#9fb0c9; margin-top:2px; }
+    .item.done .title{ text-decoration: line-through; opacity:.82; }
+
+    /* Preview */
+    .preview{
+      margin-top: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      display:grid; gap:8px;
+    }
+    .kv{ display:flex; justify-content: space-between; gap:10px; }
+    .kv span:first-child{ color:#b7c3d6; font-size:12px; }
+    .kv span:last-child{ font-size:12px; color:#e8eef6; text-align:right; }
+
+    /* Stats section */
+    .stats-card{
+      max-width: 720px;
+      margin: 14px auto 0;
+      background:var(--panel); border:1px solid var(--border); border-radius:16px;
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:end; justify-content:space-between;
+      margin-top: 10px;
+    }
+    .controls .left, .controls .right{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+
+    .kpi-grid{
+      display:grid; gap:10px; margin-top: 12px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 900px){
+      .kpi-grid{ grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .kpi{
+      background:var(--panel2); border:1px solid var(--border); border-radius:14px;
+      padding:12px;
+    }
+    .kpi .num{ font-size: 22px; font-weight: 900; margin-top: 4px; }
+
+    canvas{
+      width:100%;
+      height: 220px;
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius: 14px;
+      margin-top: 12px;
+    }
+
+    /* Desktop table + Mobile cards */
+    .table-wrap{ overflow:auto; margin-top: 12px; border:1px solid var(--border); border-radius:14px; }
+    table{ width:100%; border-collapse: collapse; background:var(--panel2); }
+    th, td{ padding: 10px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th{ font-size:12px; color:var(--muted2); font-weight:800; position: sticky; top:0; background:var(--panel2); }
+    tr:hover td{ background: rgba(255,255,255,0.02); }
+
+    .history-cards{ display:none; margin-top: 12px; }
+    .hcard{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      display:grid;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .hcard .top{ display:flex; justify-content: space-between; align-items:center; gap:10px; }
+    .badge{ font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--accent1) 30%, var(--border)); background:var(--panel); }
+
+    @media (max-width: 720px){
+      .table-wrap{ display:none; }
+      .history-cards{ display:block; }
+    }
+
+    /* Floating action button for phone */
+    .fab{
+      position: fixed;
+      right: 16px;
+      bottom: 86px;
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      /* background:#0f1621; */
+      border: 1px solid color-mix(in srgb, var(--accent1) 30%, var(--border));
+      box-shadow: 0 18px 70px rgba(0,0,0,.45);
+      display:grid;
+      place-items:center;
+      font-size: 24px;
+      z-index: 20;
+    }
+
+    /* Modal */
+    .backdrop{
+      position:fixed; inset:0; background: rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center;
+      z-index: 50;
+      padding: 12px;
+    }
+    .modal{
+      width: min(560px, calc(100vw - 24px));
+      background:var(--panel); border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1)); border-radius:16px;
+      padding:14px; box-shadow: 0 18px 70px rgba(0,0,0,.55);
+    }
+    .modal h3{ margin:0 0 8px 0; }
+    .modal .footer{ display:flex; gap:10px; justify-content:flex-end; margin-top: 12px; }
+    .modal label{ font-size:12px; color:#b7c3d6; display:block; margin-top:10px; }
+    .modal input, .modal select{ width: 100%; margin-top:6px; }
+
+    .divider{ height:1px; background:var(--border); margin:12px 0; }
+
+    /* Manage task question rows */
+    .qblock{ background:var(--panel2); border:1px solid var(--border); border-radius:14px; padding:12px; }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:-200px;
+      background:
+        radial-gradient(600px 420px at 15% 10%, color-mix(in srgb, var(--accent2) 35%, transparent), transparent 70%),
+        radial-gradient(540px 380px at 85% 0%, color-mix(in srgb, var(--accent1) 35%, transparent), transparent 70%),
+        radial-gradient(520px 520px at 85% 92%, color-mix(in srgb, var(--accent2) 20%, transparent), transparent 72%);
+      pointer-events:none;
+      z-index:-1;
+      filter: blur(2px);
+    }
+    .qgrid{ display:grid; gap:10px; grid-template-columns: 1.2fr .8fr; }
+    @media (max-width: 520px){ .qgrid{ grid-template-columns: 1fr; } }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap row" style="justify-content: space-between;">
+    <div class="row" style="gap:10px; align-items:center;">
+      <div aria-hidden="true" style="width:28px; height:28px; display:grid; place-items:center; border-radius:10px; border:1px solid #2b3a52; background:#0b1220;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="#cfe0f8" stroke-width="2"/>
+          <path d="M12 6v6l4 2" stroke="#cfe0f8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div style="display:flex; flex-direction:column; line-height:1.05;">
+        <h1 style="margin:0; font-size:15px;">Daily Pulse</h1>
+        <div class="muted" style="margin-top:2px;">Checklist • Logs • Stats</div>
+      </div>
+    </div>
+    <div class="row" style="gap:8px;">
+      <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width: 140px;">
+        Date
+        <input type="date" id="datePicker" />
+      </label>
+        <button class="smallbtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+        <button class="smallbtn danger" id="wipeBtn">Wipe</button>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+  <div class="tabs" role="tablist" aria-label="Bottom navigation">
+    <button class="tab active" id="tabToday" type="button"><span class="ico">🏠</span><span class="lbl">Today</span></button>
+    <button class="tab" id="tabStats" type="button"><span class="ico">📈</span><span class="lbl">Stats</span></button>
+    <button class="tab" id="tabDownloads" type="button"><span class="ico">⬇️</span><span class="lbl">Downloads</span></button>
+    <button class="tab" id="tabSettings" type="button"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
+  </div>
+
+  <section class="section active" id="sectionToday">
+    <div class="card">
+      <h2>Today</h2>
+      <div class="muted">Check a task ✅ to log details. Use the + button to add tasks.</div>
+      <div class="checklist" id="checklist"></div>
+      <div class="preview" id="preview"></div>
+    </div>
+  </section>
+
+  <section class="section" id="sectionStats">
+    <div class="stats-card">
+      <h2 style="margin:0 0 6px 0;">Statistics Report</h2>
+      <div class="muted">Choose a task → see its related chart + history.</div>
+
+      <div class="controls">
+        <div class="left">
+          <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+            View
+            <select id="statsTaskSelect"></select>
+          </label>
+          <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+            Range
+            <select id="rangeSelect">
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="all" selected>All</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="muted">Days logged</div><div class="num" id="kpiDays">0</div></div>
+        <div class="kpi"><div class="muted">Days completed</div><div class="num" id="kpiComplete">0</div></div>
+        <div class="kpi"><div class="muted">Current streak</div><div class="num" id="kpiStreak">0</div></div>
+        <div class="kpi"><div class="muted">Avg completion</div><div class="num" id="kpiAvg">0%</div></div>
+      </div>
+
+      <canvas id="chart" width="1100" height="300"></canvas>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Completion</th><th>Task done</th><th id="taskDetailHead">Task details</th>
+            </tr>
+          </thead>
+          <tbody id="statsTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="history-cards" id="historyCards"></div>
+    </div>
+  </section>
+
+  <section class="section" id="sectionDownloads">
+    <div class="card">
+      <h2 style="margin:0 0 6px 0;">Downloads</h2>
+      <div class="muted">Export your data for the selected date or all history.</div>
+
+      <div class="divider"></div>
+
+      <h3 style="margin:0 0 8px 0;">CSV</h3>
+      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:end;">
+        <button class="smallbtn" id="downloadDayBtn">Day CSV</button>
+
+        <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
+          From
+          <input type="date" id="dlFrom" />
+        </label>
+        <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
+          To
+          <input type="date" id="dlTo" />
+        </label>
+        <button class="smallbtn" id="downloadRangeBtn">Range CSV</button>
+
+        <button class="smallbtn" id="downloadAllBtn">All CSV</button>
+      </div>
+
+      <div class="divider"></div>
+      <div class="muted">If your browser blocks downloads, tap this link:</div>
+      <div id="downloadLinkArea" style="margin-top:8px;"></div>
+    </div>
+  </section>
+
+  <section class="section" id="sectionSettings">
+    <div class="card">
+      <h2 style="margin:0 0 6px 0;">Settings</h2>
+      <div class="muted">Manage tasks and reset options.</div>
+
+      <div class="divider"></div>
+
+      <h3 style="margin:0 0 8px 0;">Tasks</h3>
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <button class="smallbtn" id="openTasksBtn">Manage tasks</button>
+        <button class="smallbtn danger" id="deleteAllTasksBtn">Delete ALL tasks</button>
+      </div>
+      <div class="muted" style="margin-top:6px;">Deleting tasks removes them from future days and clears their logs across all days.</div>
+
+      <div class="divider"></div>
+
+      <h3 style="margin:0 0 8px 0;">Data</h3>
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <button class="smallbtn" id="goDownloadsBtn">Go to Downloads</button>
+        <button class="smallbtn danger" id="wipeBtn2">Wipe all data</button>
+      </div>
+      <div class="muted" style="margin-top:6px;">Wipe deletes tasks + history from this device/browser.</div>
+    </div>
+  </section>
+</div>
+
+<!-- Floating button for phone: add task -->
+<button class="fab" id="fabBtn" aria-label="Add task">＋</button>
+
+<!-- Popup Modal: task log/questions -->
+<div class="backdrop" id="taskBackdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="row" style="justify-content: space-between;">
+      <h3 id="taskModalTitle">Log</h3>
+      <button class="smallbtn" id="taskCloseBtn">Close</button>
+    </div>
+    <div class="muted" id="taskModalHint"></div>
+    <div class="divider"></div>
+    <div id="taskFields"></div>
+    <div class="footer">
+      <button class="smallbtn danger" id="taskSkipBtn">Skip</button>
+      <button id="taskSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Modal: add task + questions -->
+<div class="backdrop" id="manageBackdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="row" style="justify-content: space-between;">
+      <h3>Tasks</h3>
+      <button class="smallbtn" id="manageCloseBtn">Close</button>
+    </div>
+    <div class="muted">Add a task and define what questions pop up when it’s checked.</div>
+
+    <div class="row" style="gap:10px; align-items:end;">
+      <label style="flex:1;">Task name
+        <input id="newTaskName" placeholder="e.g., Walk" />
+      </label>
+      <label style="width:120px;">Icon
+        <input id="newTaskIcon" placeholder="🙂" maxlength="3" />
+      </label>
+    </div>
+    <div class="muted" style="margin-top:6px;">Pick an emoji icon (example: 🏋️ 📚 🚶 🧘 ☕️).</div>
+
+    <div class="divider"></div>
+
+    <div class="row" style="justify-content: space-between;">
+      <h3 style="margin:0;">Popup questions</h3>
+      <button class="smallbtn" id="addQuestionBtn">+ Add</button>
+    </div>
+    <div class="muted">Tip: add a <b>number</b> question if you want a chart (e.g., Weight, Steps, Pages).</div>
+
+    <div id="questionsList" style="margin-top:10px; display:grid; gap:10px;"></div>
+
+    <div class="footer">
+      <button class="smallbtn danger" id="toggleAdminBtn">Manage existing</button>
+      <button id="createTaskBtn">Create</button>
+    </div>
+
+    <div id="tasksAdmin" style="display:none; margin-top:12px;">
+      <div class="divider"></div>
+      <h3 style="margin:0 0 8px 0;">Existing tasks</h3>
+      <div class="muted">Delete removes it from future days (history stays).</div>
+      <div id="taskListAdmin" style="margin-top:10px; display:grid; gap:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------------- Storage model (v2) ----------------
+  // db = {
+  //   tasks: [ { id, name, questions:[{ key, label, type }] } ],
+  //   days: { [date]: { done:{[taskId]:true}, answers:{[taskId]:{[key]:value}} } }
+  // }
+  const KEY = "daily_checklist_phone_v2";
+
+  const ui = {
+    datePicker: document.getElementById("datePicker"),
+    checklist: document.getElementById("checklist"),
+    preview: document.getElementById("preview"),
+    wipeBtn: document.getElementById("wipeBtn"),
+    fabBtn: document.getElementById("fabBtn"),
+
+    // tab buttons
+    tabToday: document.getElementById("tabToday"),
+    tabStats: document.getElementById("tabStats"),
+    tabDownloads: document.getElementById("tabDownloads"),
+    tabSettings: document.getElementById("tabSettings"),
+
+    // sections
+    sectionToday: document.getElementById("sectionToday"),
+    sectionStats: document.getElementById("sectionStats"),
+    sectionDownloads: document.getElementById("sectionDownloads"),
+    sectionSettings: document.getElementById("sectionSettings"),
+
+    // stats
+    statsTaskSelect: document.getElementById("statsTaskSelect"),
+    rangeSelect: document.getElementById("rangeSelect"),
+    chart: document.getElementById("chart"),
+    statsTbody: document.getElementById("statsTbody"),
+    historyCards: document.getElementById("historyCards"),
+    taskDetailHead: document.getElementById("taskDetailHead"),
+    // exportBtn: document.getElementById("exportBtn"),
+    kpiDays: document.getElementById("kpiDays"),
+    kpiComplete: document.getElementById("kpiComplete"),
+    kpiStreak: document.getElementById("kpiStreak"),
+    kpiAvg: document.getElementById("kpiAvg"),
+
+    // task modal
+    taskBackdrop: document.getElementById("taskBackdrop"),
+    taskModalTitle: document.getElementById("taskModalTitle"),
+    taskModalHint: document.getElementById("taskModalHint"),
+    taskFields: document.getElementById("taskFields"),
+    taskCloseBtn: document.getElementById("taskCloseBtn"),
+    taskSkipBtn: document.getElementById("taskSkipBtn"),
+    taskSaveBtn: document.getElementById("taskSaveBtn"),
+
+    // manage modal
+    manageBackdrop: document.getElementById("manageBackdrop"),
+    manageCloseBtn: document.getElementById("manageCloseBtn"),
+    newTaskName: document.getElementById("newTaskName"),
+    newTaskIcon: document.getElementById("newTaskIcon"),
+    addQuestionBtn: document.getElementById("addQuestionBtn"),
+    questionsList: document.getElementById("questionsList"),
+    createTaskBtn: document.getElementById("createTaskBtn"),
+    toggleAdminBtn: document.getElementById("toggleAdminBtn"),
+    tasksAdmin: document.getElementById("tasksAdmin"),
+    taskListAdmin: document.getElementById("taskListAdmin"),
+    themeBtn: document.getElementById("themeBtn"),
+
+    // downloads page
+    downloadDayBtn: document.getElementById("downloadDayBtn"),
+    downloadAllBtn: document.getElementById("downloadAllBtn"),
+    dlFrom: document.getElementById("dlFrom"),
+    dlTo: document.getElementById("dlTo"),
+    downloadRangeBtn: document.getElementById("downloadRangeBtn"),
+    downloadLinkArea: document.getElementById("downloadLinkArea"),
+
+    // settings page
+    openTasksBtn: document.getElementById("openTasksBtn"),
+    deleteAllTasksBtn: document.getElementById("deleteAllTasksBtn"),
+    goDownloadsBtn: document.getElementById("goDownloadsBtn"),
+    wipeBtn2: document.getElementById("wipeBtn2"),
+  };
+
+  function todayISO(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function uuid(){
+    return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
+  }
+
+  function slugify(s){
+    return String(s || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function escapeHTML(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  function loadDB(){
+    try { return JSON.parse(localStorage.getItem(KEY)) || null; }
+    catch { return null; }
+  }
+
+  let db = loadDB();
+  if (!db){
+    // Default tasks
+    db = {
+      tasks: [
+        { id: "gym", name: "Gym", questions: [ { key: "weight_kg", label: "Today’s weight (kg)", type: "number" } ] },
+        { id: "reading", name: "Reading", questions: [ { key: "book_name", label: "Book name", type: "text" }, { key: "pages", label: "Pages read", type: "number" } ] },
+      ],
+      days: {}
+    };
+    saveDB();
+  }
+  // Ensure default icons exist
+  db.tasks = (db.tasks || []).map(t => {
+    if (t.icon) return t;
+    if (t.id === "gym") return { ...t, icon: "🏋️" };
+    if (t.id === "reading") return { ...t, icon: "📚" };
+    return { ...t, icon: "✅" };
+  });
+  saveDB();
+
+  function saveDB(){
+    localStorage.setItem(KEY, JSON.stringify(db));
+  }
+  // Tabs logic (Today / Stats / Downloads / Settings) — phone only
+  function setTab(which){
+    // On desktop, tabs are hidden and all sections are visible
+    if (window.matchMedia("(min-width: 900px)").matches) return;
+
+    const map = {
+      today: ui.sectionToday,
+      stats: ui.sectionStats,
+      downloads: ui.sectionDownloads,
+      settings: ui.sectionSettings,
+    };
+
+    Object.entries(map).forEach(([k, el]) => {
+      if (!el) return;
+      el.classList.toggle("active", k === which);
+    });
+
+    // tab button active states
+    const tmap = {
+      today: ui.tabToday,
+      stats: ui.tabStats,
+      downloads: ui.tabDownloads,
+      settings: ui.tabSettings,
+    };
+    Object.entries(tmap).forEach(([k, btn]) => {
+      if (!btn) return;
+      btn.classList.toggle("active", k === which);
+    });
+
+    // Ensure chart redraw when opening Stats
+    if (which === "stats") setTimeout(() => { try { renderStats(); } catch(e){} }, 30);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (ui.tabToday) ui.tabToday.addEventListener("click", () => setTab("today"));
+  if (ui.tabStats) ui.tabStats.addEventListener("click", () => setTab("stats"));
+  if (ui.tabDownloads) ui.tabDownloads.addEventListener("click", () => setTab("downloads"));
+  if (ui.tabSettings) ui.tabSettings.addEventListener("click", () => setTab("settings"));
+
+  // Theme toggle (persisted)
+  const THEME_KEY = "daily_pulse_theme";
+  function getTheme(){ return localStorage.getItem(THEME_KEY) || "dark"; }
+  function applyTheme(t){
+    document.documentElement.setAttribute("data-theme", t);
+    if (ui.themeBtn) ui.themeBtn.textContent = (t === "dark") ? "🌙" : "☀️";
+  }
+  applyTheme(getTheme());
+  if (ui.themeBtn){
+    ui.themeBtn.addEventListener("click", () => {
+      const next = (getTheme() === "dark") ? "light" : "dark";
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+      // re-render chart for best contrast
+      try { renderStats(); } catch(e){}
+    });
+  }
+
+  function getDay(date){
+    return db.days[date] || { date, done: {}, answers: {} };
+  }
+
+  function setDay(day){
+    db.days[day.date] = day;
+    saveDB();
+  }
+
+  // Remove tasks and also clear their stored logs across all days
+  function removeTasksByIds(ids){
+    const removeSet = new Set(ids);
+
+    // remove from task list
+    db.tasks = (db.tasks || []).filter(t => !removeSet.has(t.id));
+
+    // prune removed task logs from all days
+    Object.keys(db.days || {}).forEach(date => {
+      const day = db.days[date];
+      if (!day) return;
+      if (day.done){
+        Object.keys(day.done).forEach(tid => { if (removeSet.has(tid)) delete day.done[tid]; });
+      }
+      if (day.answers){
+        Object.keys(day.answers).forEach(tid => { if (removeSet.has(tid)) delete day.answers[tid]; });
+      }
+    });
+
+    saveDB();
+  }
+
+  // ---------------- Checklist (mobile friendly) ----------------
+  function renderChecklist(){
+    const date = ui.datePicker.value || todayISO();
+    const day = getDay(date);
+
+    ui.checklist.innerHTML = "";
+
+    db.tasks.forEach(task => {
+      const done = !!day.done?.[task.id];
+
+      const div = document.createElement("div");
+      div.className = "item" + (done ? " done" : "");
+
+      const details = task.questions?.length
+        ? `${task.questions.length} question${task.questions.length === 1 ? "" : "s"}`
+        : "No questions";
+
+      div.innerHTML = `
+        <div class="icon">${escapeHTML(task.icon || "✅")}</div>
+        <div class="tick">${done ? "✓" : ""}</div>
+        <div style="flex:1;">
+          <div class="title">${escapeHTML(task.name)}</div>
+          <div class="sub">${escapeHTML(details)}</div>
+        </div>
+        <input type="checkbox" ${done ? "checked" : ""} aria-label="${escapeHTML(task.name)} done" style="width:22px; height:22px;"/>
+      `;
+
+      const cb = div.querySelector("input[type=checkbox]");
+      const tick = div.querySelector(".tick");
+      const title = div.querySelector(".title");
+      const iconEl = div.querySelector(".icon");
+
+      function toggle(){
+        const next = !day.done?.[task.id];
+        day.done = day.done || {};
+        day.answers = day.answers || {};
+        day.done[task.id] = next;
+        setDay(day);
+        renderAll();
+        if (next) openTaskModal(task, day);
+      }
+
+      cb.addEventListener("change", toggle);
+      tick.addEventListener("click", () => { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); });
+      title.addEventListener("click", () => { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); });
+      iconEl.addEventListener("click", () => { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); });
+
+      ui.checklist.appendChild(div);
+    });
+
+    renderPreview(day);
+  }
+
+  function completionPct(day){
+    const total = db.tasks.length;
+    if (!total) return 0;
+    const doneCount = db.tasks.filter(t => !!day.done?.[t.id]).length;
+    return Math.round((doneCount / total) * 100);
+  }
+
+  function renderPreview(day){
+    ui.preview.innerHTML = "";
+    ui.preview.appendChild(kv("Date", day.date));
+    ui.preview.appendChild(kv("Completion", `${completionPct(day)}%`));
+
+    // show a few most relevant answers for today (first numeric, first text)
+    const todaySummary = summarizeAnswers(day);
+    if (todaySummary.length){
+      todaySummary.slice(0, 4).forEach(line => ui.preview.appendChild(kv(line.k, line.v)));
+    }
+  }
+
+  function summarizeAnswers(day){
+    const out = [];
+    const answers = day.answers || {};
+    db.tasks.forEach(t => {
+      const a = answers[t.id];
+      if (!a) return;
+      // Prefer: if task has a number question, show it; else show first text
+      const numQ = (t.questions || []).find(q => q.type === "number");
+      const textQ = (t.questions || []).find(q => q.type === "text");
+      if (numQ && a[numQ.key] !== undefined && a[numQ.key] !== ""){
+        out.push({ k: t.name, v: `${numQ.label}: ${a[numQ.key]}` });
+        return;
+      }
+      if (textQ && a[textQ.key] !== undefined && a[textQ.key] !== ""){
+        out.push({ k: t.name, v: `${textQ.label}: ${a[textQ.key]}` });
+      }
+    });
+    return out;
+  }
+
+  function kv(k,v){
+    const div = document.createElement("div");
+    div.className = "kv";
+    div.innerHTML = `<span>${escapeHTML(k)}</span><span>${escapeHTML(v)}</span>`;
+    return div;
+  }
+
+  // ---------------- Task Modal ----------------
+  let currentTask = null;
+
+  function openTaskModal(task, day){
+    const qs = task.questions || [];
+    if (qs.length === 0) return;
+
+    currentTask = task;
+    ui.taskModalTitle.textContent = `${task.name} ✅ — Quick log`;
+    ui.taskModalHint.textContent = "Answer what you want, then Save.";
+
+    ui.taskFields.innerHTML = "";
+    const existing = day.answers?.[task.id] || {};
+
+    qs.forEach(q => {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = `
+        <label class="muted">${escapeHTML(q.label)}
+          <input
+            ${q.type === "number" ? 'type="number" step="0.1"' : 'type="text"'}
+            data-key="${escapeHTML(q.key)}"
+            value="${escapeHTML(existing[q.key] || "") }"
+            placeholder="${q.type === "number" ? "Enter a number" : "Type here"}"
+          />
+        </label>
+      `;
+      ui.taskFields.appendChild(wrap);
+    });
+
+    ui.taskBackdrop.style.display = "flex";
+    setTimeout(() => {
+      const first = ui.taskFields.querySelector("input");
+      if (first) first.focus();
+    }, 40);
+  }
+
+  function closeTaskModal(){
+    ui.taskBackdrop.style.display = "none";
+    currentTask = null;
+  }
+
+  ui.taskCloseBtn.addEventListener("click", closeTaskModal);
+  ui.taskSkipBtn.addEventListener("click", closeTaskModal);
+  ui.taskBackdrop.addEventListener("click", (e) => { if (e.target === ui.taskBackdrop) closeTaskModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && ui.taskBackdrop.style.display === "flex") closeTaskModal(); });
+
+  ui.taskSaveBtn.addEventListener("click", () => {
+    if (!currentTask) return;
+    const date = ui.datePicker.value || todayISO();
+    const day = getDay(date);
+
+    day.answers = day.answers || {};
+    day.answers[currentTask.id] = day.answers[currentTask.id] || {};
+
+    ui.taskFields.querySelectorAll("input[data-key]").forEach(inp => {
+      const key = inp.getAttribute("data-key");
+      day.answers[currentTask.id][key] = inp.value;
+    });
+
+    setDay(day);
+    closeTaskModal();
+    renderAll();
+  });
+
+  // ---------------- Stats (task-based) ----------------
+  function getAllDatesAsc(){
+    return Object.keys(db.days).sort((a,b) => (a < b ? -1 : 1));
+  }
+
+  function filterByRange(datesAsc){
+    const r = ui.rangeSelect.value;
+    if (r === "all") return datesAsc;
+    const n = Number(r);
+    return datesAsc.slice(Math.max(0, datesAsc.length - n));
+  }
+
+  function isDayComplete(day){
+    return db.tasks.length > 0 && db.tasks.every(t => !!day.done?.[t.id]);
+  }
+
+  function calcStreak(datesAsc){
+    if (datesAsc.length === 0) return 0;
+    const latest = datesAsc[datesAsc.length - 1];
+    let streak = 0;
+    let cur = new Date(latest + "T00:00:00");
+    while (true){
+      const iso = cur.toISOString().slice(0,10);
+      const day = db.days[iso];
+      if (!day) break;
+      if (!isDayComplete(day)) break;
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function renderStatsSelectors(){
+    // Populate: Overall + each task
+    const current = ui.statsTaskSelect.value;
+    ui.statsTaskSelect.innerHTML = "";
+
+    const optAll = document.createElement("option");
+    optAll.value = "__overall__";
+    optAll.textContent = "Overall completion";
+    ui.statsTaskSelect.appendChild(optAll);
+
+    db.tasks.forEach(t => {
+      const o = document.createElement("option");
+      o.value = t.id;
+      o.textContent = `${t.icon ? t.icon + " " : ""}${t.name}`;
+      ui.statsTaskSelect.appendChild(o);
+    });
+
+    if (current && [...ui.statsTaskSelect.options].some(o => o.value === current)){
+      ui.statsTaskSelect.value = current;
+      return;
+    }
+
+    // Default to first numeric task (line chart), else overall
+    const firstNumeric = (db.tasks || []).find(t => {
+      const det = pickTaskDetailField(t);
+      return det && det.kind === "number";
+    });
+    ui.statsTaskSelect.value = firstNumeric ? firstNumeric.id : "__overall__";
+  }
+
+  function renderKPIs(datesAsc){
+    const daysLogged = datesAsc.length;
+    let complete = 0;
+    let sumPct = 0;
+
+    datesAsc.forEach(d => {
+      const day = db.days[d];
+      const pct = completionPct(day);
+      sumPct += pct;
+      if (isDayComplete(day)) complete++;
+    });
+
+    ui.kpiDays.textContent = String(daysLogged);
+    ui.kpiComplete.textContent = String(complete);
+    ui.kpiStreak.textContent = String(calcStreak(datesAsc));
+    ui.kpiAvg.textContent = daysLogged ? (Math.round(sumPct / daysLogged) + "%") : "0%";
+  }
+
+  function pickTaskDetailField(task){
+    // Prefer first number question (for chart), else first text
+    const qs = task.questions || [];
+    const numQ = qs.find(q => q.type === "number");
+    if (numQ) return { kind: "number", q: numQ };
+    const textQ = qs.find(q => q.type === "text");
+    if (textQ) return { kind: "text", q: textQ };
+    return null;
+  }
+
+  function buildSeries(datesAsc, selected){
+    // returns [{date,value,label?}]
+    if (selected === "__overall__"){
+      return datesAsc.map(d => ({ date: d, value: completionPct(db.days[d]) }));
+    }
+
+    const task = db.tasks.find(t => t.id === selected);
+    if (!task){
+      return datesAsc.map(d => ({ date:d, value:null }));
+    }
+
+    // Use numeric field if exists; otherwise done(0/1)
+    const det = pickTaskDetailField(task);
+
+    if (det && det.kind === "number"){
+      return datesAsc.map(d => {
+        const day = db.days[d];
+        const vRaw = day.answers?.[task.id]?.[det.q.key];
+        const v = (vRaw === undefined || vRaw === "") ? null : Number(vRaw);
+        return { date: d, value: Number.isNaN(v) ? null : v };
+      });
+    }
+
+    // no numeric: show done as 1/0
+    return datesAsc.map(d => {
+      const day = db.days[d];
+      return { date: d, value: day.done?.[task.id] ? 1 : 0 };
+    });
+  }
+
+  function drawChart(datesAsc){
+    const selected = ui.statsTaskSelect.value || "__overall__";
+    const ctx = ui.chart.getContext("2d");
+    const w = ui.chart.width, h = ui.chart.height;
+    ctx.clearRect(0,0,w,h);
+
+    // Get computed theme colors
+    const cs = getComputedStyle(document.documentElement);
+    const muted = cs.getPropertyValue('--muted').trim() || "#9fb0c9";
+    const border = cs.getPropertyValue('--border').trim() || "#1f2a37";
+    const text = cs.getPropertyValue('--text').trim() || "#e8eef6";
+
+    // Frame
+    const x0 = 52, x1 = w - 14, y0 = 16, y1 = h - 34;
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0, y1);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+
+    if (datesAsc.length === 0){
+      ctx.fillStyle = muted;
+      ctx.font = "12px system-ui";
+      ctx.fillText("No data yet", x0 + 10, Math.floor(h/2));
+      return;
+    }
+
+    const series = buildSeries(datesAsc, selected);
+    const vals = series.map(p => p.value).filter(v => v !== null);
+
+    if (vals.length === 0){
+      ctx.fillStyle = muted;
+      ctx.font = "12px system-ui";
+      ctx.fillText("No values yet for this view", x0 + 10, Math.floor(h/2));
+      return;
+    }
+
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const span = (max - min) || 1;
+    const pad = span * 0.15;
+    const yMin = min - pad;
+    const yMax = max + pad;
+
+    // Title
+    ctx.fillStyle = muted;
+    ctx.font = "12px system-ui";
+
+    const title = (selected === "__overall__")
+      ? "Overall completion %"
+      : (() => {
+          const t = db.tasks.find(x => x.id === selected);
+          const det = t ? pickTaskDetailField(t) : null;
+          if (!t) return "Task";
+          if (det && det.kind === "number") return `${t.name} — ${det.q.label}`;
+          return `${t.name} — done`;
+        })();
+
+    ctx.fillText(title, x0, 14);
+
+    // Axis labels
+    ctx.fillText(datesAsc[0], x0, h - 10);
+    const last = datesAsc[datesAsc.length - 1];
+    const tw = ctx.measureText(last).width;
+    ctx.fillText(last, Math.max(x0, x1 - tw), h - 10);
+
+    // Helper to map series point to canvas coords
+    const xAt = (i) => x0 + (i / Math.max(1, series.length - 1)) * (x1 - x0);
+    const yAt = (val) => y1 - ((val - yMin) / (yMax - yMin)) * (y1 - y0);
+
+    // Light horizontal gridlines + Y labels (min/mid/max)
+    const gridYs = [yMin, (yMin + yMax) / 2, yMax];
+    ctx.strokeStyle = "rgba(159,176,201,0.12)";
+    ctx.lineWidth = 1;
+    gridYs.forEach((gv, idx) => {
+      const gy = yAt(gv);
+      ctx.beginPath();
+      ctx.moveTo(x0, gy);
+      ctx.lineTo(x1, gy);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = muted;
+      ctx.font = "11px system-ui";
+      const label = (selected === "__overall__") ? `${Math.round(gv)}%` : `${Math.round(gv * 10) / 10}`;
+      ctx.fillText(label, 6, Math.max(12, Math.min(h - 10, gy + 4)));
+    });
+
+    // Always draw a line chart (no bars)
+    ctx.strokeStyle = text;
+    ctx.lineWidth = 2;
+
+    // Draw line segments; break on missing values so it never fakes a trend
+    let prev = null;
+    series.forEach((p, i) => {
+      if (p.value === null) { prev = null; return; }
+      const x = xAt(i);
+      const y = yAt(p.value);
+      if (prev === null){
+        prev = { x, y };
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        prev = { x, y };
+      }
+    });
+
+    // Points + small value labels for clarity
+    series.forEach((p, i) => {
+      if (p.value === null) return;
+      const x = xAt(i);
+      const y = yAt(p.value);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 3.25, 0, Math.PI * 2);
+      ctx.fillStyle = text;
+      ctx.fill();
+
+      // value label (avoid overcrowding)
+      if (series.length <= 14 || i % 2 === 0){
+        ctx.fillStyle = muted;
+        ctx.font = "10px system-ui";
+        const txt = `${Math.round(p.value * 10) / 10}`;
+        ctx.fillText(txt, x + 6, y - 6);
+      }
+    });
+  }
+
+  function renderTable(datesAsc){
+    const selected = ui.statsTaskSelect.value || "__overall__";
+
+    ui.statsTbody.innerHTML = "";
+    ui.historyCards.innerHTML = "";
+
+    // dynamic header for details
+    let head = "Task details";
+    if (selected === "__overall__"){
+      head = "All tasks";
+    } else {
+      const t = db.tasks.find(x => x.id === selected);
+      const det = t ? pickTaskDetailField(t) : null;
+      if (t && det && det.kind === "number") head = `${t.name}: ${det.q.label}`;
+      else if (t && det && det.kind === "text") head = `${t.name}: ${det.q.label}`;
+      else if (t) head = `${t.name}: done`;
+    }
+    ui.taskDetailHead.textContent = head;
+
+    if (datesAsc.length === 0){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="muted" colspan="4">No history yet. Start checking tasks daily.</td>`;
+      ui.statsTbody.appendChild(tr);
+      const hc = document.createElement("div");
+      hc.className = "hcard";
+      hc.innerHTML = `<div class="muted">No history yet. Start checking tasks daily.</div>`;
+      ui.historyCards.appendChild(hc);
+      return;
+    }
+
+    // newest first
+    [...datesAsc].reverse().forEach(d => {
+      const day = db.days[d];
+      const comp = completionPct(day);
+
+      let taskDone = "—";
+      let detail = "—";
+
+      if (selected === "__overall__"){
+        taskDone = `${comp === 100 ? "✅" : "—"}`;
+        const doneCount = db.tasks.filter(t => !!day.done?.[t.id]).length;
+        detail = `${doneCount}/${db.tasks.length} tasks done`;
+      } else {
+        const t = db.tasks.find(x => x.id === selected);
+        if (t){
+          taskDone = day.done?.[t.id] ? "✅" : "—";
+          const det = pickTaskDetailField(t);
+          if (det){
+            const v = day.answers?.[t.id]?.[det.q.key];
+            detail = (v !== undefined && v !== "") ? String(v) : "—";
+          } else {
+            detail = day.done?.[t.id] ? "Done" : "Not done";
+          }
+        }
+      }
+
+      // Desktop table row
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHTML(d)}</td>
+        <td>${comp}%</td>
+        <td>${taskDone}</td>
+        <td>${escapeHTML(detail)}</td>
+      `;
+      ui.statsTbody.appendChild(tr);
+
+      // Mobile card
+      const hc = document.createElement("div");
+      hc.className = "hcard";
+      hc.innerHTML = `
+        <div class="top">
+          <div style="font-weight:800;">${escapeHTML(d)}</div>
+          <span class="badge">${comp}%</span>
+        </div>
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Task</div>
+          <div>${selected === "__overall__" ? "Overall" : escapeHTML((db.tasks.find(x => x.id === selected)?.name || "Task"))}</div>
+        </div>
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Done</div>
+          <div>${taskDone}</div>
+        </div>
+        <div class="row" style="justify-content: space-between;">
+          <div class="muted">Details</div>
+          <div style="text-align:right;">${escapeHTML(detail)}</div>
+        </div>
+      `;
+      ui.historyCards.appendChild(hc);
+    });
+  }
+
+  function renderStats(){
+    renderStatsSelectors();
+    const all = getAllDatesAsc();
+    const dates = filterByRange(all);
+
+    renderKPIs(dates);
+    drawChart(dates);
+    renderTable(dates);
+  }
+
+  // Direct download helper (no Share sheet). Also renders a visible download link fallback.
+  function downloadBlob(filename, blob){
+    // Create object URL
+    let url = "";
+    try {
+      url = URL.createObjectURL(blob);
+    } catch (e){
+      alert("Could not create download.");
+      return;
+    }
+
+    // Always show a visible link fallback
+    if (ui.downloadLinkArea){
+      ui.downloadLinkArea.innerHTML = `
+        <a href="${url}" download="${filename}" style="display:inline-block; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel2); text-decoration:none; color:var(--text); font-weight:800;">
+          Tap to download ${filename}
+        </a>
+      `;
+    }
+
+    // Try programmatic download
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e){
+      // ignore; user can tap the visible link
+    }
+
+    // Revoke later (give user time to tap)
+    setTimeout(() => {
+      try { URL.revokeObjectURL(url); } catch(e){}
+    }, 5 * 60 * 1000);
+  }
+  function parseISODate(s){
+    return String(s || "").slice(0,10);
+  }
+
+  function inRange(d, from, to){
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  }
+
+  function exportCSVRange(from, to){
+    const datesAsc = getAllDatesAsc().filter(d => inRange(d, from, to));
+    if (datesAsc.length === 0){
+      alert("No data in that date range.");
+      return;
+    }
+
+    // Build dynamic columns: each task -> done + first numeric/text field
+    const taskCols = [];
+    db.tasks.forEach(t => {
+      taskCols.push({ col: `${t.id}_done`, label: `${t.name} done`, kind: "done", taskId: t.id });
+      const det = pickTaskDetailField(t);
+      if (det){
+        taskCols.push({ col: `${t.id}_${det.q.key}`, label: `${t.name}: ${det.q.label}`, kind: "ans", taskId: t.id, key: det.q.key });
+      }
+    });
+
+    const header = ["date","completionPct"].concat(taskCols.map(c => c.col));
+    const lines = [header.join(",")];
+
+    datesAsc.forEach(d => {
+      const day = db.days[d];
+      const row = [d, String(completionPct(day))];
+
+      taskCols.forEach(c => {
+        if (c.kind === "done"){
+          row.push(String(!!day.done?.[c.taskId]));
+        } else {
+          const v = day.answers?.[c.taskId]?.[c.key];
+          row.push(csvCell(v ?? ""));
+        }
+      });
+
+      lines.push(row.join(","));
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const label = (from || "") + "_to_" + (to || "");
+    downloadBlob(`daily-pulse-range-${label || todayISO()}.csv`, blob);
+  }
+
+  function csvCell(v){
+    const s = String(v ?? "");
+    if (/[",\n]/.test(s)) return `"${s.replaceAll('"','""')}"`;
+    return s;
+  }
+
+  function exportCSV(){
+    const datesAsc = getAllDatesAsc();
+
+    // Build dynamic columns: each task -> done + first numeric/text field
+    const taskCols = [];
+    db.tasks.forEach(t => {
+      taskCols.push({ col: `${t.id}_done`, label: `${t.name} done`, kind: "done", taskId: t.id });
+      const det = pickTaskDetailField(t);
+      if (det){
+        taskCols.push({ col: `${t.id}_${det.q.key}`, label: `${t.name}: ${det.q.label}`, kind: "ans", taskId: t.id, key: det.q.key });
+      }
+    });
+
+    const header = ["date","completionPct"].concat(taskCols.map(c => c.col));
+    const lines = [header.join(",")];
+
+    datesAsc.forEach(d => {
+      const day = db.days[d];
+      const row = [d, String(completionPct(day))];
+
+      taskCols.forEach(c => {
+        if (c.kind === "done"){
+          row.push(String(!!day.done?.[c.taskId]));
+        } else {
+          const v = day.answers?.[c.taskId]?.[c.key];
+          row.push(csvCell(v ?? ""));
+        }
+      });
+
+      lines.push(row.join(","));
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    downloadBlob(`daily-pulse-all-${todayISO()}.csv`, blob);
+  }
+
+  // Export selected day as CSV
+  function exportDayCSV(d){
+    const day = db.days[d];
+    if (!day){
+      alert("No data for selected day.");
+      return;
+    }
+    const header = ["date","completionPct"];
+    const row = [d, String(completionPct(day))];
+    db.tasks.forEach(t => {
+      header.push(`${t.name} done`);
+      row.push(String(!!day.done?.[t.id]));
+      const det = pickTaskDetailField(t);
+      if (det){
+        header.push(`${t.name}: ${det.q.label}`);
+        row.push(csvCell(day.answers?.[t.id]?.[det.q.key] ?? ""));
+      }
+    });
+    const csv = header.join(",") + "\n" + row.join(",");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    downloadBlob(`daily-pulse-${d}.csv`, blob);
+  }
+
+
+  // ---------------- Manage tasks modal ----------------
+  let questionDrafts = [];
+
+  function openManage(){
+    ui.newTaskName.value = "";
+    if (ui.newTaskIcon) ui.newTaskIcon.value = "";
+    questionDrafts = [];
+    renderQuestionDrafts();
+    ui.tasksAdmin.style.display = "none";
+    ui.manageBackdrop.style.display = "flex";
+  }
+
+  function closeManage(){
+    ui.manageBackdrop.style.display = "none";
+  }
+
+  ui.fabBtn.addEventListener("click", openManage);
+  ui.manageCloseBtn.addEventListener("click", closeManage);
+  ui.manageBackdrop.addEventListener("click", (e) => { if (e.target === ui.manageBackdrop) closeManage(); });
+
+  ui.addQuestionBtn.addEventListener("click", () => {
+    questionDrafts.push({ label: "", type: "text" });
+    renderQuestionDrafts();
+  });
+
+  function renderQuestionDrafts(){
+    ui.questionsList.innerHTML = "";
+    if (questionDrafts.length === 0){
+      const d = document.createElement("div");
+      d.className = "muted";
+      d.textContent = "No questions yet. Add one if you want a popup when the task is checked.";
+      ui.questionsList.appendChild(d);
+      return;
+    }
+
+    questionDrafts.forEach((q, idx) => {
+      const block = document.createElement("div");
+      block.className = "qblock";
+      block.innerHTML = `
+        <div class="qgrid">
+          <label>Question label
+            <input data-idx="${idx}" data-field="label" placeholder="e.g., Steps today" value="${escapeHTML(q.label)}" />
+          </label>
+          <label>Type
+            <select data-idx="${idx}" data-field="type">
+              <option value="text" ${q.type === "text" ? "selected" : ""}>Text</option>
+              <option value="number" ${q.type === "number" ? "selected" : ""}>Number</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="justify-content:flex-end; margin-top:10px;">
+          <button class="smallbtn danger" data-del="${idx}">Remove</button>
+        </div>
+      `;
+
+      block.querySelectorAll("input[data-field], select[data-field]").forEach(el => {
+        const update = () => {
+          const i = Number(el.getAttribute("data-idx"));
+          const f = el.getAttribute("data-field");
+          questionDrafts[i][f] = el.value;
+        };
+        el.addEventListener("input", update);
+        el.addEventListener("change", update);
+      });
+
+      block.querySelector("[data-del]").addEventListener("click", () => {
+        questionDrafts.splice(idx, 1);
+        renderQuestionDrafts();
+      });
+
+      ui.questionsList.appendChild(block);
+    });
+  }
+
+  ui.createTaskBtn.addEventListener("click", () => {
+    const name = ui.newTaskName.value.trim();
+    const icon = (ui.newTaskIcon?.value || "").trim();
+    if (!name){
+      alert("Please enter a task name.");
+      return;
+    }
+
+    const id = slugify(name) || uuid();
+    if (db.tasks.some(t => t.id === id)){
+      alert("Task already exists. Choose a different name.");
+      return;
+    }
+
+    const questions = questionDrafts
+      .map(q => ({ label: (q.label||"").trim(), type: q.type }))
+      .filter(q => q.label.length > 0)
+      .map(q => ({ key: slugify(q.label) || uuid(), label: q.label, type: q.type }));
+
+    db.tasks.push({ id, name, icon: icon || "✅", questions });
+    saveDB();
+
+    closeManage();
+    renderAll();
+  });
+
+  ui.toggleAdminBtn.addEventListener("click", () => {
+    ui.tasksAdmin.style.display = (ui.tasksAdmin.style.display === "none") ? "block" : "none";
+    renderTasksAdmin();
+  });
+
+  function renderTasksAdmin(){
+    ui.taskListAdmin.innerHTML = "";
+    db.tasks.forEach(t => {
+      const row = document.createElement("div");
+      row.className = "qblock";
+      row.innerHTML = `
+        <div class="row" style="justify-content: space-between; align-items:center;">
+          <div>
+            <div style="font-weight:800;">${escapeHTML(t.name)}</div>
+            <div class="muted">${(t.questions?.length || 0)} question(s)</div>
+          </div>
+          <button class="smallbtn danger">Delete</button>
+        </div>
+      `;
+
+      row.querySelector("button").addEventListener("click", () => {
+        if (!confirm(`Delete task "${t.name}"?`)) return;
+        removeTasksByIds([t.id]);
+        renderTasksAdmin();
+        renderAll();
+      });
+
+      ui.taskListAdmin.appendChild(row);
+    });
+  }
+
+  // ---------------- Wire up ----------------
+  ui.datePicker.value = todayISO();
+  ui.datePicker.addEventListener("change", () => renderAll());
+  if (ui.dlFrom) ui.dlFrom.value = "";
+  if (ui.dlTo) ui.dlTo.value = ui.datePicker.value;
+
+  ui.statsTaskSelect.addEventListener("change", () => renderStats());
+  ui.rangeSelect.addEventListener("change", () => renderStats());
+
+  ui.wipeBtn.addEventListener("click", () => {
+    if (!confirm("Delete ALL saved data (tasks + history) from this browser?")) return;
+    localStorage.removeItem(KEY);
+    location.reload();
+  });
+
+
+  // Downloads page actions
+  if (ui.downloadDayBtn) ui.downloadDayBtn.addEventListener("click", () => exportDayCSV(ui.datePicker.value || todayISO()));
+  if (ui.downloadAllBtn) ui.downloadAllBtn.addEventListener("click", exportCSV);
+  if (ui.downloadRangeBtn) ui.downloadRangeBtn.addEventListener("click", () => {
+    const from = parseISODate(ui.dlFrom?.value);
+    const to = parseISODate(ui.dlTo?.value);
+    exportCSVRange(from || "", to || "");
+  });
+
+  // Settings page actions
+  if (ui.openTasksBtn) ui.openTasksBtn.addEventListener("click", () => openManage());
+  if (ui.deleteAllTasksBtn) ui.deleteAllTasksBtn.addEventListener("click", () => {
+    if (!confirm("Delete ALL tasks? This will clear task logs for those tasks across all days.")) return;
+    const ids = (db.tasks || []).map(t => t.id);
+    removeTasksByIds(ids);
+    renderAll();
+    alert("All tasks deleted.");
+  });
+  if (ui.goDownloadsBtn) ui.goDownloadsBtn.addEventListener("click", () => setTab("downloads"));
+  if (ui.wipeBtn2) ui.wipeBtn2.addEventListener("click", () => ui.wipeBtn.click());
+
+  function renderAll(){
+    renderChecklist();
+    renderStats();
+  }
+
+  renderAll();
+
+  // Default to Today tab on phones
+  if (!window.matchMedia("(min-width: 900px)").matches){
+    setTab("today");
+  }
+// --- Remove unused openSettings/closeSettings ---
+</script>
+</body>
+</html>
