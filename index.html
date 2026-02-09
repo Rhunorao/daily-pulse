@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Daily Pulse</title>
+  <meta name="theme-color" content="#0b0f14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+  <link rel="manifest" id="manifestLink" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Billionaire+Script&display=swap" rel="stylesheet">
@@ -229,6 +235,31 @@
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .muted{ color:var(--muted); font-size:12px; }
     .pill{ font-size:12px; border:1px solid color-mix(in srgb, var(--accent1) 30%, var(--border)); padding:6px 10px; border-radius:999px; background:var(--chip); }
+
+    /* Segmented control (Weekdays / Weekends) */
+    .seg{
+      display:flex;
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:4px;
+      gap:4px;
+    }
+    .segBtn{
+      appearance:none;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--muted);
+      font-weight:900;
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:12px;
+    }
+    .segBtn.active{
+      background:var(--panel2);
+      border-color:color-mix(in srgb, var(--accent1) 28%, var(--border));
+      color:var(--text);
+    }
 
     input, select, button, textarea{
       background:var(--panel2); color:var(--text); border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1));
@@ -576,19 +607,26 @@
 
       <h3 style="margin:0 0 8px 0;">CSV</h3>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:end;">
-        <button class="smallbtn" id="downloadDayBtn">Day CSV</button>
-
-        <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
-          From
-          <input type="date" id="dlFrom" />
+        <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:180px;">
+          CSV type
+          <select id="csvModeSelect">
+            <option value="day" selected>Day CSV (today)</option>
+            <option value="range">Range CSV</option>
+          </select>
         </label>
-        <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
-          To
-          <input type="date" id="dlTo" />
-        </label>
-        <button class="smallbtn" id="downloadRangeBtn">Range CSV</button>
 
-        <button class="smallbtn" id="downloadAllBtn">All CSV</button>
+        <div id="rangeInputs" class="row" style="gap:10px; align-items:end; display:none;">
+          <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
+            From
+            <input type="date" id="dlFrom" />
+          </label>
+          <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
+            To
+            <input type="date" id="dlTo" />
+          </label>
+        </div>
+
+        <button class="smallbtn" id="downloadCsvBtn">Download CSV</button>
       </div>
 
       <div class="divider"></div>
@@ -605,9 +643,12 @@
       <div class="divider"></div>
 
       <div class="row" style="justify-content: space-between; align-items:center;">
-        <div class="pill" id="ttDatePill">Today</div>
-        <div class="row" style="gap:8px;">
-          <button class="smallbtn" id="ttModeBtn" title="Switch between Default schedule and Today override">Default</button>
+        <div class="pill" id="ttDatePill">Timetable</div>
+        <div class="row" style="gap:8px; align-items:center;">
+          <div class="seg" role="group" aria-label="Timetable template">
+            <button class="segBtn active" id="ttWeekdaysBtn" type="button">Weekdays</button>
+            <button class="segBtn" id="ttWeekendsBtn" type="button">Weekends</button>
+          </div>
           <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
         </div>
       </div>
@@ -801,13 +842,13 @@
     themeBtn: document.getElementById("themeBtn"),
 
     // downloads page
-    downloadDayBtn: document.getElementById("downloadDayBtn"),
-    downloadAllBtn: document.getElementById("downloadAllBtn"),
     dlFrom: document.getElementById("dlFrom"),
     dlTo: document.getElementById("dlTo"),
-    downloadRangeBtn: document.getElementById("downloadRangeBtn"),
     downloadLinkArea: document.getElementById("downloadLinkArea"),
     downloadReportBtn: document.getElementById("downloadReportBtn"),
+    csvModeSelect: document.getElementById("csvModeSelect"),
+    rangeInputs: document.getElementById("rangeInputs"),
+    downloadCsvBtn: document.getElementById("downloadCsvBtn"),
 
     // settings page
     openTasksBtn: document.getElementById("openTasksBtn"),
@@ -822,7 +863,8 @@
     ttDatePill: document.getElementById("ttDatePill"),
     timetableList: document.getElementById("timetableList"),
     addSlotBtn: document.getElementById("addSlotBtn"),
-    ttModeBtn: document.getElementById("ttModeBtn"),
+    ttWeekdaysBtn: document.getElementById("ttWeekdaysBtn"),
+    ttWeekendsBtn: document.getElementById("ttWeekendsBtn"),
 
     // slot modal
     slotBackdrop: document.getElementById("slotBackdrop"),
@@ -969,9 +1011,11 @@
     return (wd === 0 || wd === 6);
   }
 
-  let timetableMode = "default"; // "default" or "today"
-  function setTimetableMode(mode){
-    timetableMode = (mode === "today") ? "today" : "default";
+  let timetableTemplate = isWeekend(todayISO()) ? "weekend" : "weekday"; // which template we are editing
+  function setTimetableTemplate(t){
+    timetableTemplate = (t === "weekend") ? "weekend" : "weekday";
+    if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.classList.toggle('active', timetableTemplate === 'weekday');
+    if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.classList.toggle('active', timetableTemplate === 'weekend');
     renderTimetable();
   }
 
@@ -982,11 +1026,12 @@
     db.schedule.templates.weekend = Array.isArray(db.schedule.templates.weekend) ? db.schedule.templates.weekend : [];
     db.schedule.overrides = db.schedule.overrides || {};
 
-    if (timetableMode === "today"){
-      return Array.isArray(db.schedule.overrides[dateISO]) ? db.schedule.overrides[dateISO] : [];
+    // If there is an explicit override for today, prefer it when viewing today
+    if (Array.isArray(db.schedule.overrides[dateISO]) && db.schedule.overrides[dateISO].length){
+      return db.schedule.overrides[dateISO];
     }
 
-    return isWeekend(dateISO) ? db.schedule.templates.weekend : db.schedule.templates.weekday;
+    return (timetableTemplate === 'weekend') ? db.schedule.templates.weekend : db.schedule.templates.weekday;
   }
 
   function setSlots(dateISO, slots){
@@ -994,29 +1039,25 @@
     db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
     db.schedule.overrides = db.schedule.overrides || {};
 
-    if (timetableMode === "today"){
-      db.schedule.overrides[dateISO] = slots;
-    } else {
-      if (isWeekend(dateISO)) db.schedule.templates.weekend = slots;
-      else db.schedule.templates.weekday = slots;
-    }
+    if (timetableTemplate === 'weekend') db.schedule.templates.weekend = slots;
+    else db.schedule.templates.weekday = slots;
+
     saveDB();
   }
 
   function renderTimetable(){
     const date = todayISO();
 
-    const wd = weekdayIndex(date);
-    const bucket = isWeekend(date) ? "Weekends" : "Weekdays";
+    const liveBucket = isWeekend(date) ? "Weekends" : "Weekdays";
 
-    // Header pill shows what is being displayed
-    const hasOverride = Array.isArray(db.schedule?.overrides?.[date]) && db.schedule.overrides[date].length > 0;
-    const modeLabel = (timetableMode === "today")
-      ? `Today override • ${date}`
-      : `${bucket}`;
+    // Pill shows what today is (weekday/weekend) and what template you are editing
+    if (ui.ttDatePill){
+      ui.ttDatePill.textContent = `Today: ${date} • ${liveBucket}`;
+    }
 
-    if (ui.ttDatePill) ui.ttDatePill.textContent = modeLabel;
-    if (ui.ttModeBtn) ui.ttModeBtn.textContent = (timetableMode === "today") ? "Today" : bucket;
+    // Sync segmented UI
+    if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.classList.toggle('active', timetableTemplate === 'weekday');
+    if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.classList.toggle('active', timetableTemplate === 'weekend');
 
     const slots = getSlots(date)
       .slice()
@@ -1029,10 +1070,7 @@
         <div class="ttEmpty">
           <div style="font-weight:950; margin-bottom:6px;">No slots</div>
           <div class="muted">
-            ${timetableMode === "today"
-              ? "Add a one-off plan for today (use this for weekends or special days)."
-              : "Add your default schedule for this ${bucket.toLowerCase()}. It repeats automatically."}
-            ${(!hasOverride && timetableMode !== "today") ? "" : ""}
+            Add your schedule for ${timetableTemplate === 'weekend' ? 'weekends' : 'weekdays'}. It repeats automatically.
           </div>
         </div>
       `;
@@ -1070,7 +1108,7 @@
   function openSlotModal(slot){
     editingSlotId = slot?.id || null;
 
-    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : ((timetableMode === 'today') ? 'Add slot (Today)' : 'Add slot (Default)');
+    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${timetableTemplate === 'weekend' ? 'Weekends' : 'Weekdays'})`;
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
     if (ui.slotEnd) ui.slotEnd.value = slot?.end || '';
     if (ui.slotTitle) ui.slotTitle.value = slot?.title || '';
@@ -1087,11 +1125,8 @@
   }
 
   if (ui.addSlotBtn) ui.addSlotBtn.addEventListener('click', ()=> openSlotModal(null));
-  if (ui.ttModeBtn){
-    ui.ttModeBtn.addEventListener('click', () => {
-      setTimetableMode(timetableMode === 'default' ? 'today' : 'default');
-    });
-  }
+  if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.addEventListener('click', () => setTimetableTemplate('weekday'));
+  if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.addEventListener('click', () => setTimetableTemplate('weekend'));
   // ---------------- Report Download ----------------
   function getDatesForRange(from, to){
     const all = getAllDatesAsc();
@@ -2168,12 +2203,24 @@
 
 
   // Downloads page actions
-  if (ui.downloadDayBtn) ui.downloadDayBtn.addEventListener("click", () => exportDayCSV(todayISO()));
-  if (ui.downloadAllBtn) ui.downloadAllBtn.addEventListener("click", exportCSV);
-  if (ui.downloadRangeBtn) ui.downloadRangeBtn.addEventListener("click", () => {
-    const from = parseISODate(ui.dlFrom?.value);
-    const to = parseISODate(ui.dlTo?.value);
-    exportCSVRange(from || "", to || "");
+  function syncCsvUI(){
+    const mode = ui.csvModeSelect?.value || 'day';
+    if (ui.rangeInputs) ui.rangeInputs.style.display = (mode === 'range') ? 'flex' : 'none';
+    if (ui.dlTo) ui.dlTo.value = ui.dlTo.value || todayISO();
+  }
+
+  if (ui.csvModeSelect) ui.csvModeSelect.addEventListener('change', syncCsvUI);
+  syncCsvUI();
+
+  if (ui.downloadCsvBtn) ui.downloadCsvBtn.addEventListener('click', () => {
+    const mode = ui.csvModeSelect?.value || 'day';
+    if (mode === 'range'){
+      const from = parseISODate(ui.dlFrom?.value);
+      const to = parseISODate(ui.dlTo?.value) || todayISO();
+      exportCSVRange(from || '', to || '');
+      return;
+    }
+    exportDayCSV(todayISO());
   });
   if (ui.downloadReportBtn) ui.downloadReportBtn && ui.downloadReportBtn.addEventListener('click', downloadHTMLReport);
 
@@ -2195,9 +2242,9 @@
     renderTimetable();
   }
 
-  // Timetable mode starts as Default
+  // Timetable template starts based on today (weekday/weekend)
   renderAll();
-  setTimetableMode('default');
+  setTimetableTemplate(isWeekend(todayISO()) ? 'weekend' : 'weekday');
 
   // Default to Today tab on phones
   if (!window.matchMedia("(min-width: 900px)").matches){
@@ -2207,3 +2254,24 @@
 </script>
 </body>
 </html>
+  // Runtime manifest (single-file friendly). Put icon-512.png next to this HTML file.
+  (function setupManifest(){
+    const link = document.getElementById('manifestLink');
+    if (!link) return;
+    const manifest = {
+      name: 'Daily Pulse',
+      short_name: 'Daily Pulse',
+      start_url: '.',
+      display: 'standalone',
+      background_color: '#0b0f14',
+      theme_color: '#0b0f14',
+      icons: [
+        { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+      ]
+    };
+    try {
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+    } catch(e){}
+  })();
