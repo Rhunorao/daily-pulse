@@ -77,6 +77,14 @@
       margin:0;
     }
 
+    .dateText{
+      font-size:14px;
+      color:var(--muted);
+      padding:6px 12px;
+      border-radius:10px;
+      background:var(--panel2);
+    }
+
     .headerActions{
       display:flex;
       justify-content:flex-end;
@@ -384,12 +392,6 @@
     <div></div>
 
     <div class="brand" aria-label="Daily Pulse">
-      <div class="brandMark" aria-hidden="true">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="#cfe0f8" stroke-width="2"/>
-          <path d="M12 6v6l4 2" stroke="#cfe0f8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
       <div class="brandText">
         <h1>Daily Pulse</h1>
         <div class="muted" style="margin-top:2px;">Checklist • Logs • Stats</div>
@@ -397,9 +399,8 @@
     </div>
 
     <div class="headerActions">
-      <div class="dateWrap" aria-label="Select date">
-        <div class="muted">Date</div>
-        <input type="date" id="datePicker" />
+      <div class="dateWrap" aria-label="Today date">
+        <span id="todayDate" class="dateText"></span>
       </div>
       <button class="smallbtn iconBtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
       <button class="smallbtn danger iconBtn" id="wipeBtn" title="Wipe data" aria-label="Wipe data">🗑️</button>
@@ -409,10 +410,9 @@
 
 <div class="page">
   <div class="tabs" role="tablist" aria-label="Bottom navigation">
-    <button class="tab active" id="tabToday" type="button"><span class="ico">🏠</span><span class="lbl">Today</span></button>
-    <button class="tab" id="tabStats" type="button"><span class="ico">📈</span><span class="lbl">Stats</span></button>
-    <button class="tab" id="tabDownloads" type="button"><span class="ico">⬇️</span><span class="lbl">Downloads</span></button>
-    <button class="tab" id="tabSettings" type="button"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
+    <button class="tab active" id="tabToday" type="button">Checklist</button>
+    <button class="tab" id="tabStats" type="button">Stats</button>
+    <button class="tab" id="tabDownloads" type="button">Logs</button>
   </div>
 
   <section class="section active" id="sectionToday">
@@ -598,7 +598,6 @@
   const KEY = "daily_checklist_phone_v2";
 
   const ui = {
-    datePicker: document.getElementById("datePicker"),
     checklist: document.getElementById("checklist"),
     preview: document.getElementById("preview"),
     wipeBtn: document.getElementById("wipeBtn"),
@@ -608,7 +607,6 @@
     tabToday: document.getElementById("tabToday"),
     tabStats: document.getElementById("tabStats"),
     tabDownloads: document.getElementById("tabDownloads"),
-    tabSettings: document.getElementById("tabSettings"),
 
     // sections
     sectionToday: document.getElementById("sectionToday"),
@@ -623,7 +621,6 @@
     statsTbody: document.getElementById("statsTbody"),
     historyCards: document.getElementById("historyCards"),
     taskDetailHead: document.getElementById("taskDetailHead"),
-    // exportBtn: document.getElementById("exportBtn"),
     kpiDays: document.getElementById("kpiDays"),
     kpiComplete: document.getElementById("kpiComplete"),
     kpiStreak: document.getElementById("kpiStreak"),
@@ -664,6 +661,7 @@
     deleteAllTasksBtn: document.getElementById("deleteAllTasksBtn"),
     goDownloadsBtn: document.getElementById("goDownloadsBtn"),
     wipeBtn2: document.getElementById("wipeBtn2"),
+    todayDate: document.getElementById("todayDate"),
   };
 
   function todayISO(){
@@ -810,7 +808,8 @@
 
   // ---------------- Checklist (mobile friendly) ----------------
   function renderChecklist(){
-    const date = ui.datePicker.value || todayISO();
+    // Since datePicker is removed, always use today
+    const date = todayISO();
     const day = getDay(date);
 
     ui.checklist.innerHTML = "";
@@ -1611,10 +1610,9 @@
   }
 
   // ---------------- Wire up ----------------
-  ui.datePicker.value = todayISO();
-  ui.datePicker.addEventListener("change", () => renderAll());
+  // No datePicker anymore; always today
   if (ui.dlFrom) ui.dlFrom.value = "";
-  if (ui.dlTo) ui.dlTo.value = ui.datePicker.value;
+  if (ui.dlTo) ui.dlTo.value = todayISO();
 
   ui.statsTaskSelect.addEventListener("change", () => renderStats());
   ui.rangeSelect.addEventListener("change", () => renderStats());
@@ -1627,7 +1625,7 @@
 
 
   // Downloads page actions
-  if (ui.downloadDayBtn) ui.downloadDayBtn.addEventListener("click", () => exportDayCSV(ui.datePicker.value || todayISO()));
+  if (ui.downloadDayBtn) ui.downloadDayBtn.addEventListener("click", () => exportDayCSV(todayISO()));
   if (ui.downloadAllBtn) ui.downloadAllBtn.addEventListener("click", exportCSV);
   if (ui.downloadRangeBtn) ui.downloadRangeBtn.addEventListener("click", () => {
     const from = parseISODate(ui.dlFrom?.value);
@@ -1650,6 +1648,16 @@
   function renderAll(){
     renderChecklist();
     renderStats();
+  }
+
+  // Fill today's date in header
+  if (ui.todayDate) {
+    const today = new Date();
+    ui.todayDate.textContent = today.toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric'
+    });
   }
 
   renderAll();
