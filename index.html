@@ -183,42 +183,24 @@
       flex-wrap:nowrap;
     }
     .headerLeft{ display:flex; align-items:center; justify-content:flex-start; }
-    .drawerBackdrop{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.45);
-      display:none;
-      z-index: 60;
-    }
-    .drawerBackdrop.open{ display:block; }
-    .drawer{
-      position:absolute;
-      left:0; top:0; bottom:0;
-      width: min(460px, 72vw);
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      box-shadow: 0 18px 70px rgba(0,0,0,.45);
-      transform: translateX(-105%);
-      transition: transform .18s ease-out;
-      padding: 14px;
+    .tabs{
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
       display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
-    .drawerBackdrop.open .drawer{ transform: translateX(0); }
-    .drawerTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .drawerTitle{ font-weight: 900; letter-spacing: .02em; }
-    .drawerNav{ display:grid; gap:8px; margin-top: 4px; }
-    .drawerItem{
-      text-align:left;
-      width:100%;
-      padding:12px 12px;
-      border-radius:14px;
-      background: var(--panel2);
+      gap:6px;
+      background: color-mix(in srgb, var(--panel) 88%, transparent);
       border:1px solid var(--border);
-      font-weight: 800;
+      border-radius:18px;
+      padding:6px;
+      z-index: 30;
+      box-shadow: 0 18px 70px rgba(0,0,0,.35);
+      backdrop-filter: blur(10px);
+      max-width: 720px;
+      margin: 0 auto;
+      box-sizing: border-box;
     }
-    .drawerItem:hover{ filter: brightness(1.06); }
-    .drawerFoot{ margin-top:auto; padding-top:10px; border-top:1px solid var(--border); }
 
     /* Removed .dateWrap and nested rules */
 
@@ -321,7 +303,7 @@
     .page{
       max-width: 1100px;
       margin: 0 auto;
-      padding: 14px 12px 120px; /* bottom space for FAB and bottom bar */
+      padding: 14px 12px 150px; /* bottom space for FAB and bottom bar */
       min-height: calc(100vh - 64px);
       display:flex;
       flex-direction:column;
@@ -503,12 +485,9 @@
 <body>
 <header>
   <div class="wrap headerBar">
-    <div class="headerLeft">
-      <button class="smallbtn iconBtn" id="menuBtn" title="Menu" aria-label="Open menu">☰</button>
-    </div>
+    <div class="headerLeft" aria-hidden="true"></div>
 
     <div class="brand" aria-label="Daily Pulse">
-      <div class="brandMark" aria-hidden="true">DP</div>
       <div class="brandText">
         <h1>Daily Pulse</h1>
       </div>
@@ -516,30 +495,19 @@
 
     <div class="headerActions">
       <button class="smallbtn iconBtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-      <button class="smallbtn danger iconBtn" id="wipeBtn" title="Wipe data" aria-label="Wipe data">🗑️</button>
+      <button class="smallbtn danger" id="wipeBtn" title="Clear all data" aria-label="Clear all data">Clear</button>
     </div>
   </div>
 </header>
 
-<!-- Side drawer -->
-<div class="drawerBackdrop" id="drawerBackdrop" aria-hidden="true">
-  <aside class="drawer" id="drawer" role="dialog" aria-label="Menu">
-    <div class="drawerTop">
-      <div class="drawerTitle">Daily Pulse</div>
-      <button class="smallbtn iconBtn" id="drawerCloseBtn" aria-label="Close menu">✕</button>
-    </div>
 
-    <nav class="drawerNav" aria-label="Navigation">
-      <button class="drawerItem" type="button" data-go="today">Checklist</button>
-      <button class="drawerItem" type="button" data-go="stats">Stats</button>
-      <button class="drawerItem" type="button" data-go="downloads">Logs</button>
-      <button class="drawerItem" type="button" data-go="timetable">Timetable</button>
-      <button class="drawerItem" type="button" data-go="settings">Settings</button>
-    </nav>
-
-    <div class="drawerFoot muted">Use Timetable to plan your day, then track it with the checklist.</div>
-  </aside>
-</div>
+  <div class="tabs" role="tablist" aria-label="Bottom navigation">
+    <button class="tab active" id="tabToday" type="button" aria-label="Checklist"><span class="ico">✅</span><span class="lbl">Checklist</span></button>
+    <button class="tab" id="tabStats" type="button" aria-label="Stats"><span class="ico">📈</span><span class="lbl">Stats</span></button>
+    <button class="tab" id="tabDownloads" type="button" aria-label="Logs"><span class="ico">🗂️</span><span class="lbl">Logs</span></button>
+    <button class="tab" id="tabTimetable" type="button" aria-label="Timetable"><span class="ico">🗓️</span><span class="lbl">Timetable</span></button>
+    <button class="tab" id="tabSettings" type="button" aria-label="Settings"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
+  </div>
 
 <div class="page">
 
@@ -674,7 +642,7 @@
       <h3 style="margin:0 0 8px 0;">Data</h3>
       <div class="row" style="gap:10px; flex-wrap:wrap;">
         <button class="smallbtn" id="goDownloadsBtn">Go to Downloads</button>
-        <button class="smallbtn danger" id="wipeBtn2">Wipe all data</button>
+        <button class="smallbtn danger" id="wipeBtn2">Clear all data</button>
       </div>
       <div class="muted" style="margin-top:6px;">Wipe deletes tasks + history from this device/browser.</div>
     </div>
@@ -796,6 +764,8 @@
     tabToday: document.getElementById("tabToday"),
     tabStats: document.getElementById("tabStats"),
     tabDownloads: document.getElementById("tabDownloads"),
+    tabTimetable: document.getElementById("tabTimetable"),
+    tabSettings: document.getElementById("tabSettings"),
 
     // sections
     sectionToday: document.getElementById("sectionToday"),
@@ -853,10 +823,6 @@
     wipeBtn2: document.getElementById("wipeBtn2"),
     // todayDate: document.getElementById("todayDate"),
 
-    // drawer
-    menuBtn: document.getElementById("menuBtn"),
-    drawerBackdrop: document.getElementById("drawerBackdrop"),
-    drawerCloseBtn: document.getElementById("drawerCloseBtn"),
 
     // timetable
     sectionTimetable: document.getElementById("sectionTimetable"),
@@ -959,6 +925,8 @@
       today: ui.tabToday,
       stats: ui.tabStats,
       downloads: ui.tabDownloads,
+      timetable: ui.tabTimetable,
+      settings: ui.tabSettings,
     };
     Object.entries(tmap).forEach(([k, btn]) => {
       if (!btn) return;
@@ -971,32 +939,13 @@
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  // Drawer (hamburger) open/close
-  function openDrawer(){
-    if (!ui.drawerBackdrop) return;
-    ui.drawerBackdrop.classList.add('open');
-    ui.drawerBackdrop.setAttribute('aria-hidden','false');
-  }
-  function closeDrawer(){
-    if (!ui.drawerBackdrop) return;
-    ui.drawerBackdrop.classList.remove('open');
-    ui.drawerBackdrop.setAttribute('aria-hidden','true');
-  }
-  if (ui.menuBtn) ui.menuBtn.addEventListener('click', openDrawer);
-  if (ui.drawerCloseBtn) ui.drawerCloseBtn.addEventListener('click', closeDrawer);
-  if (ui.drawerBackdrop) ui.drawerBackdrop.addEventListener('click', (e)=>{ if (e.target === ui.drawerBackdrop) closeDrawer(); });
-  document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDrawer(); });
 
-  // Drawer navigation
-  if (ui.drawerBackdrop){
-    ui.drawerBackdrop.querySelectorAll('[data-go]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const where = btn.getAttribute('data-go');
-        closeDrawer();
-        setTab(where);
-      });
-    });
-  }
+  // Bottom tab navigation
+  if (ui.tabToday) ui.tabToday.addEventListener("click", () => setTab("today"));
+  if (ui.tabStats) ui.tabStats.addEventListener("click", () => setTab("stats"));
+  if (ui.tabDownloads) ui.tabDownloads.addEventListener("click", () => setTab("downloads"));
+  if (ui.tabTimetable) ui.tabTimetable.addEventListener("click", () => setTab("timetable"));
+  if (ui.tabSettings) ui.tabSettings.addEventListener("click", () => setTab("settings"));
   // ---------------- Timetable ----------------
   function weekdayIndex(dateISO){
     const d = new Date(dateISO + "T00:00:00");
