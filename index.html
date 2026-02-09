@@ -878,11 +878,12 @@
     wipeBtn2: document.getElementById("wipeBtn2"),
     // todayDate: document.getElementById("todayDate"),
 
+
     // timetable
     sectionTimetable: document.getElementById("sectionTimetable"),
     ttDatePill: document.getElementById("ttDatePill"),
     timetableList: document.getElementById("timetableList"),
-    // Removed addSlotBtn reference
+    // addSlotBtn: document.getElementById("addSlotBtn"),
     ttWeekdaysBtn: document.getElementById("ttWeekdaysBtn"),
     ttWeekendsBtn: document.getElementById("ttWeekendsBtn"),
 
@@ -1151,7 +1152,7 @@
     if (ui.slotBackdrop) ui.slotBackdrop.style.display = 'none';
   }
 
-  // Removed obsolete addSlotBtn listener
+  // if (ui.addSlotBtn) ui.addSlotBtn.addEventListener('click', ()=> openSlotModal(null));
   if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.addEventListener('click', () => setTimetableTemplate('weekday'));
   if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.addEventListener('click', () => setTimetableTemplate('weekend'));
   // ---------------- Report Download ----------------
@@ -2099,15 +2100,7 @@
     ui.manageBackdrop.style.display = "none";
   }
 
-  ui.fabBtn.addEventListener("click", () => {
-    const ttActive = ui.sectionTimetable?.classList.contains('active');
-    if (ttActive){
-      // Always add for TODAY (weekly schedule day)
-      openSlotModal(null, dayKeyFromISO(todayISO()));
-    } else {
-      openManage();
-    }
-  });
+  // Remove direct openManage handler from FAB
   ui.manageCloseBtn.addEventListener("click", closeManage);
   ui.manageBackdrop.addEventListener("click", (e) => { if (e.target === ui.manageBackdrop) closeManage(); });
 
@@ -2222,7 +2215,6 @@
     });
   }
 
-  // ---------------- Wire up ----------------
   // No datePicker anymore; always today
   if (ui.dlFrom) ui.dlFrom.value = "";
   if (ui.dlTo) ui.dlTo.value = todayISO();
@@ -2286,10 +2278,21 @@
     setTab("today");
     if (ui.fabBtn) ui.fabBtn.style.display = 'grid';
   } else {
-    // Desktop: hide FAB
     if (ui.fabBtn) ui.fabBtn.style.display = 'none';
   }
-// ---  Remove unused openSettings/closeSettings ---
+  // FAB click handler: routes by active section and uses TODAY for timetable
+  if (ui.fabBtn) {
+    ui.fabBtn.addEventListener("click", () => {
+      const ttActive = ui.sectionTimetable?.classList.contains('active');
+      if (ttActive){
+        // Always add for TODAY (weekly schedule day)
+        openSlotModal(null, dayKeyFromISO(todayISO()));
+      } else {
+        openManage();
+      }
+    });
+  }
+// --- Remove unused openSettings/closeSettings ---
 </script>
 </body>
 </html>
