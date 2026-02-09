@@ -56,7 +56,7 @@
 
     .headerBar{
       display:grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 44px 1fr 44px;
       align-items:center;
       gap:10px;
     }
@@ -522,9 +522,7 @@
 <body>
 <header>
   <div class="wrap headerBar">
-    <div class="headerLeft">
-      <button class="smallbtn iconBtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
-    </div>
+    <div class="headerLeft" aria-hidden="true"></div>
 
     <div class="brand" aria-label="Daily Pulse">
       <div class="brandText">
@@ -533,7 +531,7 @@
     </div>
 
     <div class="headerActions">
-      <button class="smallbtn danger" id="wipeBtn" title="Clear all data" aria-label="Clear all data">Clear</button>
+      <button class="smallbtn iconBtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
     </div>
   </div>
 </header>
@@ -663,15 +661,20 @@
 
       <div class="divider"></div>
 
-      <div class="row" style="justify-content: space-between; align-items:center;">
-        <div class="pill" id="ttDatePill">Timetable</div>
-        <div class="row" style="gap:8px; align-items:center;">
-          <div class="seg" role="group" aria-label="Timetable template">
-            <button class="segBtn active" id="ttWeekdaysBtn" type="button">Weekdays</button>
-            <button class="segBtn" id="ttWeekendsBtn" type="button">Weekends</button>
-          </div>
-          <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
-        </div>
+      <div class="row" style="justify-content: space-between; align-items:end;">
+        <label class="muted" style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:200px;">
+          View day
+          <select id="ttViewDaySelect">
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+            <option value="0">Sunday</option>
+          </select>
+        </label>
+        <div class="pill" id="ttDatePill">Weekly timetable • repeats every week</div>
       </div>
 
       <div id="timetableList" class="timetableList"></div>
@@ -778,6 +781,18 @@
     <div class="divider"></div>
 
     <div class="qgrid">
+      <label>Day
+        <select id="slotDay">
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+          <option value="0">Sunday</option>
+          <option value="all">All week</option>
+        </select>
+      </label>
       <label>Start time
         <input type="time" id="slotStart" />
       </label>
@@ -883,9 +898,7 @@
     sectionTimetable: document.getElementById("sectionTimetable"),
     ttDatePill: document.getElementById("ttDatePill"),
     timetableList: document.getElementById("timetableList"),
-    // addSlotBtn: document.getElementById("addSlotBtn"),
-    ttWeekdaysBtn: document.getElementById("ttWeekdaysBtn"),
-    ttWeekendsBtn: document.getElementById("ttWeekendsBtn"),
+    ttViewDaySelect: document.getElementById("ttViewDaySelect"),
 
     // slot modal
     slotBackdrop: document.getElementById("slotBackdrop"),
@@ -897,6 +910,7 @@
     slotNotes: document.getElementById("slotNotes"),
     slotSaveBtn: document.getElementById("slotSaveBtn"),
     slotDeleteBtn: document.getElementById("slotDeleteBtn"),
+    slotDay: document.getElementById("slotDay"),
   };
 
   function todayISO(){
@@ -948,30 +962,13 @@
     return { ...t, icon: "✅" };
   });
   saveDB();
-  // Timetable storage (templates + per-date overrides)
-  // db.schedule = { templates:{ weekday:[slots], weekend:[slots] }, overrides:{[date]:[slots]} }
-  db.schedule = db.schedule || { templates:{ weekday:[], weekend:[] }, overrides:{} };
-
-  // Migration from older weekly-per-day format if present
-  if (db.schedule.weekly && !db.schedule.templates){
-    const pickFirstNonEmpty = (arr) => {
-      for (const k of arr){
-        const v = db.schedule.weekly[String(k)];
-        if (Array.isArray(v) && v.length) return v;
-      }
-      return [];
-    };
-    db.schedule.templates = {
-      weekday: pickFirstNonEmpty([1,2,3,4,5]),
-      weekend: pickFirstNonEmpty([6,0])
-    };
-    delete db.schedule.weekly;
+  // Timetable (weekly, not calendar)
+  // db.schedule = { weekly: { '0':[], '1':[], ... '6':[] } }
+  db.schedule = db.schedule || {};
+  db.schedule.weekly = db.schedule.weekly || {};
+  for (const k of ['0','1','2','3','4','5','6']){
+    if (!Array.isArray(db.schedule.weekly[k])) db.schedule.weekly[k] = [];
   }
-
-  db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
-  db.schedule.templates.weekday = Array.isArray(db.schedule.templates.weekday) ? db.schedule.templates.weekday : [];
-  db.schedule.templates.weekend = Array.isArray(db.schedule.templates.weekend) ? db.schedule.templates.weekend : [];
-  db.schedule.overrides = db.schedule.overrides || {};
   saveDB();
 
   function saveDB(){
@@ -1008,13 +1005,6 @@
       btn.classList.toggle("active", k === which);
     });
 
-    // FAB visibility: only on Checklist (today) and Timetable
-    if (ui.fabBtn){
-      const show = (which === 'today' || which === 'timetable');
-      ui.fabBtn.style.display = show ? 'grid' : 'none';
-      ui.fabBtn.setAttribute('aria-label', which === 'timetable' ? 'Add slot' : 'Add task');
-    }
-
     // Ensure chart redraw when opening Stats
     if (which === "stats") setTimeout(() => { try { renderStats(); } catch(e){} }, 30);
     if (which === "timetable") setTimeout(() => { try { renderTimetable(); } catch(e){} }, 30);
@@ -1022,72 +1012,40 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Bottom tab navigation
-  if (ui.tabToday) ui.tabToday.addEventListener("click", () => setTab("today"));
-  if (ui.tabStats) ui.tabStats.addEventListener("click", () => setTab("stats"));
-  if (ui.tabDownloads) ui.tabDownloads.addEventListener("click", () => setTab("downloads"));
-  if (ui.tabTimetable) ui.tabTimetable.addEventListener("click", () => setTab("timetable"));
-  if (ui.tabSettings) ui.tabSettings.addEventListener("click", () => setTab("settings"));
-  // ---------------- Timetable ----------------
-  function weekdayIndex(dateISO){
+  // ---------------- Timetable (weekly, 7 days) ----------------
+  const DAY_LABEL = { '0':'Sunday','1':'Monday','2':'Tuesday','3':'Wednesday','4':'Thursday','5':'Friday','6':'Saturday' };
+
+  function dayKeyFromISO(dateISO){
     const d = new Date(dateISO + "T00:00:00");
-    return d.getDay(); // 0=Sun ... 6=Sat
+    return String(d.getDay());
   }
 
-  function isWeekend(dateISO){
-    const wd = weekdayIndex(dateISO);
-    return (wd === 0 || wd === 6);
+  function getWeeklySlots(dayKey){
+    db.schedule = db.schedule || {};
+    db.schedule.weekly = db.schedule.weekly || {};
+    if (!Array.isArray(db.schedule.weekly[dayKey])) db.schedule.weekly[dayKey] = [];
+    return db.schedule.weekly[dayKey];
   }
 
-  let timetableTemplate = isWeekend(todayISO()) ? "weekend" : "weekday"; // which template we are editing
-  function setTimetableTemplate(t){
-    timetableTemplate = (t === "weekend") ? "weekend" : "weekday";
-    if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.classList.toggle('active', timetableTemplate === 'weekday');
-    if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.classList.toggle('active', timetableTemplate === 'weekend');
-    renderTimetable();
-  }
-
-  function getSlots(dateISO){
-    db.schedule = db.schedule || { templates:{ weekday:[], weekend:[] }, overrides:{} };
-    db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
-    db.schedule.templates.weekday = Array.isArray(db.schedule.templates.weekday) ? db.schedule.templates.weekday : [];
-    db.schedule.templates.weekend = Array.isArray(db.schedule.templates.weekend) ? db.schedule.templates.weekend : [];
-    db.schedule.overrides = db.schedule.overrides || {};
-
-    // If there is an explicit override for today, prefer it when viewing today
-    if (Array.isArray(db.schedule.overrides[dateISO]) && db.schedule.overrides[dateISO].length){
-      return db.schedule.overrides[dateISO];
-    }
-
-    return (timetableTemplate === 'weekend') ? db.schedule.templates.weekend : db.schedule.templates.weekday;
-  }
-
-  function setSlots(dateISO, slots){
-    db.schedule = db.schedule || { templates:{ weekday:[], weekend:[] }, overrides:{} };
-    db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
-    db.schedule.overrides = db.schedule.overrides || {};
-
-    if (timetableTemplate === 'weekend') db.schedule.templates.weekend = slots;
-    else db.schedule.templates.weekday = slots;
-
+  function setWeeklySlots(dayKey, slots){
+    db.schedule = db.schedule || {};
+    db.schedule.weekly = db.schedule.weekly || {};
+    db.schedule.weekly[dayKey] = slots;
     saveDB();
   }
 
+  // Selected day to view in timetable page (defaults to today's day)
+  let ttViewDayKey = dayKeyFromISO(todayISO());
+
   function renderTimetable(){
-    const date = todayISO();
+    const viewKey = ttViewDayKey;
+    const viewLabel = DAY_LABEL[viewKey] || 'Day';
 
-    const liveBucket = isWeekend(date) ? "Weekends" : "Weekdays";
-
-    // Pill shows what today is (weekday/weekend) and what template you are editing
     if (ui.ttDatePill){
-      ui.ttDatePill.textContent = `Today: ${date} • ${liveBucket}`;
+      ui.ttDatePill.textContent = `Weekly timetable • ${viewLabel}`;
     }
 
-    // Sync segmented UI
-    if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.classList.toggle('active', timetableTemplate === 'weekday');
-    if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.classList.toggle('active', timetableTemplate === 'weekend');
-
-    const slots = getSlots(date)
+    const slots = getWeeklySlots(viewKey)
       .slice()
       .sort((a,b) => (a.start || '').localeCompare(b.start || ''));
 
@@ -1096,10 +1054,8 @@
     if (slots.length === 0){
       ui.timetableList.innerHTML = `
         <div class="ttEmpty">
-          <div style="font-weight:950; margin-bottom:6px;">No slots</div>
-          <div class="muted">
-            Add your schedule for ${timetableTemplate === 'weekend' ? 'weekends' : 'weekdays'}. It repeats automatically.
-          </div>
+          <div style="font-weight:950; margin-bottom:6px;">No slots for ${viewLabel}</div>
+          <div class="muted">Tap + to add a slot. This schedule repeats every week.</div>
         </div>
       `;
       return;
@@ -1127,16 +1083,26 @@
         </div>
       `;
 
-      row.querySelector('button').addEventListener('click', ()=> openSlotModal(s));
+      row.querySelector('button').addEventListener('click', ()=> openSlotModal(s, viewKey));
       ui.timetableList.appendChild(row);
     });
   }
 
   let editingSlotId = null;
-  function openSlotModal(slot){
-    editingSlotId = slot?.id || null;
+  let editingDayKey = null;
 
-    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${timetableTemplate === 'weekend' ? 'Weekends' : 'Weekdays'})`;
+  function openSlotModal(slot, dayKey){
+    editingSlotId = slot?.id || null;
+    editingDayKey = dayKey || ttViewDayKey;
+
+    const viewLabel = DAY_LABEL[editingDayKey] || 'Day';
+    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${viewLabel})`;
+
+    // Default day selection to the day being edited/viewed
+    if (ui.slotDay){
+      ui.slotDay.value = String(editingDayKey);
+    }
+
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
     if (ui.slotEnd) ui.slotEnd.value = slot?.end || '';
     if (ui.slotTitle) ui.slotTitle.value = slot?.title || '';
@@ -1147,15 +1113,12 @@
     if (ui.slotBackdrop) ui.slotBackdrop.style.display = 'flex';
     setTimeout(()=>{ try{ ui.slotTitle?.focus(); }catch(e){} }, 50);
   }
+
   function closeSlotModal(){
     editingSlotId = null;
+    editingDayKey = null;
     if (ui.slotBackdrop) ui.slotBackdrop.style.display = 'none';
   }
-
-  // if (ui.addSlotBtn) ui.addSlotBtn.addEventListener('click', ()=> openSlotModal(null));
-  if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.addEventListener('click', () => setTimetableTemplate('weekday'));
-  if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.addEventListener('click', () => setTimetableTemplate('weekend'));
-  // ---------------- Report Download ----------------
   function getDatesForRange(from, to){
     const all = getAllDatesAsc();
     return all.filter(d => inRange(d, from, to));
@@ -1327,9 +1290,6 @@
   if (ui.slotBackdrop) ui.slotBackdrop.addEventListener('click', (e)=>{ if (e.target===ui.slotBackdrop) closeSlotModal(); });
 
   if (ui.slotSaveBtn) ui.slotSaveBtn.addEventListener('click', ()=>{
-    const date = todayISO();
-    const slots = getSlots(date);
-
     const start = ui.slotStart?.value || '';
     const end = ui.slotEnd?.value || '';
     const title = (ui.slotTitle?.value || '').trim();
@@ -1337,16 +1297,22 @@
 
     if (!title){ alert('Please enter a title (e.g., Gym).'); return; }
 
-    if (editingSlotId){
-      const idx = slots.findIndex(s => s.id === editingSlotId);
-      if (idx >= 0){
-        slots[idx] = { ...slots[idx], start, end, title, notes };
-      }
-    } else {
-      slots.push({ id: uuid(), start, end, title, notes });
-    }
+    const sel = ui.slotDay?.value || String(ttViewDayKey);
+    const targetKeys = (sel === 'all')
+      ? ['0','1','2','3','4','5','6']
+      : [String(sel)];
 
-    setSlots(date, slots);
+    targetKeys.forEach(k => {
+      const slots = getWeeklySlots(k).slice();
+      if (editingSlotId && editingDayKey === k){
+        const idx = slots.findIndex(s => s.id === editingSlotId);
+        if (idx >= 0) slots[idx] = { ...slots[idx], start, end, title, notes };
+      } else if (!editingSlotId){
+        slots.push({ id: uuid(), start, end, title, notes });
+      }
+      setWeeklySlots(k, slots);
+    });
+
     closeSlotModal();
     renderTimetable();
   });
@@ -1354,16 +1320,15 @@
   if (ui.slotDeleteBtn) ui.slotDeleteBtn.addEventListener('click', ()=>{
     if (!editingSlotId) return;
     if (!confirm('Delete this slot?')) return;
-    const date = todayISO();
-    const slots = getSlots(date).filter(s => s.id !== editingSlotId);
-    setSlots(date, slots);
+    const k = String(editingDayKey || ttViewDayKey);
+    const slots = getWeeklySlots(k).filter(s => s.id !== editingSlotId);
+    setWeeklySlots(k, slots);
     closeSlotModal();
     renderTimetable();
   });
 
 
 
-  // Theme toggle (persisted)
   const THEME_KEY = "daily_pulse_theme";
   function getTheme(){ return localStorage.getItem(THEME_KEY) || "dark"; }
   function applyTheme(t){
@@ -2100,7 +2065,7 @@
     ui.manageBackdrop.style.display = "none";
   }
 
-  // Remove direct openManage handler from FAB
+  ui.fabBtn.addEventListener("click", openManage);
   ui.manageCloseBtn.addEventListener("click", closeManage);
   ui.manageBackdrop.addEventListener("click", (e) => { if (e.target === ui.manageBackdrop) closeManage(); });
 
@@ -2215,6 +2180,7 @@
     });
   }
 
+  // ---------------- Wire up ----------------
   // No datePicker anymore; always today
   if (ui.dlFrom) ui.dlFrom.value = "";
   if (ui.dlTo) ui.dlTo.value = todayISO();
@@ -2227,7 +2193,6 @@
     localStorage.removeItem(KEY);
     location.reload();
   });
-
 
   // Downloads page actions
   function syncCsvUI(){
@@ -2263,34 +2228,93 @@
   if (ui.goDownloadsBtn) ui.goDownloadsBtn.addEventListener("click", () => setTab("downloads"));
   if (ui.wipeBtn2) ui.wipeBtn2.addEventListener("click", () => ui.wipeBtn.click());
 
+  // Timetable day selector (7 days)
+  if (ui.ttViewDaySelect){
+    // default select to TODAY
+    ui.ttViewDaySelect.value = dayKeyFromISO(todayISO());
+    ttViewDayKey = ui.ttViewDaySelect.value;
+
+    ui.ttViewDaySelect.addEventListener('change', () => {
+      ttViewDayKey = ui.ttViewDaySelect.value;
+      renderTimetable();
+    });
+  }
+
+  // FAB behavior: checklist opens task manager, timetable opens add slot for TODAY
+  if (ui.fabBtn){
+    ui.fabBtn.onclick = () => {
+      const ttActive = ui.sectionTimetable?.classList.contains('active');
+      if (ttActive){
+        openSlotModal(null, dayKeyFromISO(todayISO()));
+      } else {
+        openManage();
+      }
+    };
+  }
+
+  // Patch setTab to show FAB only on today and timetable
+  const origSetTab = setTab;
+  setTab = function(which){
+    // On desktop, tabs are hidden and all sections are visible
+    if (window.matchMedia("(min-width: 900px)").matches) return;
+
+    const map = {
+      today: ui.sectionToday,
+      stats: ui.sectionStats,
+      downloads: ui.sectionDownloads,
+      timetable: ui.sectionTimetable,
+      settings: ui.sectionSettings,
+    };
+
+    Object.entries(map).forEach(([k, el]) => {
+      if (!el) return;
+      el.classList.toggle("active", k === which);
+    });
+
+    // tab button active states
+    const tmap = {
+      today: ui.tabToday,
+      stats: ui.tabStats,
+      downloads: ui.tabDownloads,
+      timetable: ui.tabTimetable,
+      settings: ui.tabSettings,
+    };
+    Object.entries(tmap).forEach(([k, btn]) => {
+      if (!btn) return;
+      btn.classList.toggle("active", k === which);
+    });
+
+    // Ensure chart redraw when opening Stats
+    if (which === "stats") setTimeout(() => { try { renderStats(); } catch(e){} }, 30);
+    if (which === "timetable") setTimeout(() => { try { renderTimetable(); } catch(e){} }, 30);
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (ui.fabBtn){
+      const show = (which === 'today' || which === 'timetable');
+      ui.fabBtn.style.display = show ? 'grid' : 'none';
+      ui.fabBtn.setAttribute('aria-label', which === 'timetable' ? 'Add slot' : 'Add task');
+    }
+  };
+
+  // Bottom tab navigation
+  if (ui.tabToday) ui.tabToday.addEventListener("click", () => setTab("today"));
+  if (ui.tabStats) ui.tabStats.addEventListener("click", () => setTab("stats"));
+  if (ui.tabDownloads) ui.tabDownloads.addEventListener("click", () => setTab("downloads"));
+  if (ui.tabTimetable) ui.tabTimetable.addEventListener("click", () => setTab("timetable"));
+  if (ui.tabSettings) ui.tabSettings.addEventListener("click", () => setTab("settings"));
+
   function renderAll(){
     renderChecklist();
     renderStats();
     renderTimetable();
   }
 
-  // Timetable template starts based on today (weekday/weekend)
   renderAll();
-  setTimetableTemplate(isWeekend(todayISO()) ? 'weekend' : 'weekday');
 
   // Default to Today tab on phones
   if (!window.matchMedia("(min-width: 900px)").matches){
     setTab("today");
-    if (ui.fabBtn) ui.fabBtn.style.display = 'grid';
-  } else {
-    if (ui.fabBtn) ui.fabBtn.style.display = 'none';
-  }
-  // FAB click handler: routes by active section and uses TODAY for timetable
-  if (ui.fabBtn) {
-    ui.fabBtn.addEventListener("click", () => {
-      const ttActive = ui.sectionTimetable?.classList.contains('active');
-      if (ttActive){
-        // Always add for TODAY (weekly schedule day)
-        openSlotModal(null, dayKeyFromISO(todayISO()));
-      } else {
-        openManage();
-      }
-    });
   }
 // --- Remove unused openSettings/closeSettings ---
 </script>
