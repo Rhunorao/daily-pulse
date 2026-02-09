@@ -184,7 +184,7 @@
       left: 10px;
       right: 10px;
       bottom: 10px;
-      display:flex;
+      display:none;
       gap:6px;
       background: color-mix(in srgb, var(--panel) 88%, transparent);
       border:1px solid var(--border);
@@ -468,11 +468,6 @@
 </div>
 
 <div class="page">
-  <div class="tabs" role="tablist" aria-label="Bottom navigation">
-    <button class="tab active" id="tabToday" type="button">Checklist</button>
-    <button class="tab" id="tabStats" type="button">Stats</button>
-    <button class="tab" id="tabDownloads" type="button">Logs</button>
-  </div>
 
   <section class="section active" id="sectionToday">
     <div class="card">
@@ -530,21 +525,6 @@
   </section>
 
   <section class="section" id="sectionDownloads">
-  <section class="section" id="sectionTimetable">
-    <div class="card">
-      <h2 style="margin:0 0 6px 0;">Timetable</h2>
-      <div class="muted">Plan today’s schedule. It saves automatically.</div>
-
-      <div class="divider"></div>
-
-      <div class="row" style="justify-content: space-between; align-items:center;">
-        <div class="pill" id="ttDatePill">Today</div>
-        <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
-      </div>
-
-      <div id="timetableList" style="margin-top:12px; display:grid; gap:10px;"></div>
-    </div>
-  </section>
     <div class="card">
       <h2 style="margin:0 0 6px 0;">Downloads</h2>
       <div class="muted">Export your data for the selected date or all history.</div>
@@ -571,6 +551,22 @@
       <div class="divider"></div>
       <div class="muted">If your browser blocks downloads, tap this link:</div>
       <div id="downloadLinkArea" style="margin-top:8px;"></div>
+    </div>
+  </section>
+
+  <section class="section" id="sectionTimetable">
+    <div class="card">
+      <h2 style="margin:0 0 6px 0;">Timetable</h2>
+      <div class="muted">Plan today’s schedule. It saves automatically.</div>
+
+      <div class="divider"></div>
+
+      <div class="row" style="justify-content: space-between; align-items:center;">
+        <div class="pill" id="ttDatePill">Today</div>
+        <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
+      </div>
+
+      <div id="timetableList" style="margin-top:12px; display:grid; gap:10px;"></div>
     </div>
   </section>
 
@@ -1012,10 +1008,7 @@
     renderTimetable();
   });
 
-  if (ui.tabToday) ui.tabToday.addEventListener("click", () => setTab("today"));
-  if (ui.tabStats) ui.tabStats.addEventListener("click", () => setTab("stats"));
-  if (ui.tabDownloads) ui.tabDownloads.addEventListener("click", () => setTab("downloads"));
-  if (ui.tabSettings) ui.tabSettings.addEventListener("click", () => setTab("settings"));
+
 
   // Theme toggle (persisted)
   const THEME_KEY = "daily_pulse_theme";
