@@ -71,12 +71,89 @@
       background:var(--panel2);
       flex:0 0 30px;
     }
-    .brandText{ display:flex; flex-direction:column; line-height:1.05; }
+    .brandText{ display:flex; flex-direction:column; align-items:center; line-height:1.1; }
     .brandDate{
+      margin-top:6px;
+      font-size:11px;
+      color:var(--muted);
+      display:inline-flex;
+      align-self:center;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1));
+      background: color-mix(in srgb, var(--panel2) 70%, transparent);
+    }
+    /* Timetable */
+    .timetableList{
+      margin-top:14px;
+      display:grid;
+      gap:12px;
+    }
+
+    .ttEmpty{
+      padding:14px;
+      border-radius:16px;
+      border:1px dashed color-mix(in srgb, var(--accent1) 35%, var(--border));
+      background: color-mix(in srgb, var(--panel2) 60%, transparent);
+    }
+
+    .ttSlot{
+      width:100%;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid color-mix(in srgb, var(--accent1) 28%, var(--border));
+      background:
+        radial-gradient(420px 260px at 10% 0%, color-mix(in srgb, var(--accent2) 28%, transparent), transparent 68%),
+        radial-gradient(380px 240px at 90% 10%, color-mix(in srgb, var(--accent1) 28%, transparent), transparent 72%),
+        var(--panel2);
+      overflow:hidden;
+    }
+
+    .ttBar{
+      width:10px;
+      border-radius:999px;
+      flex:0 0 10px;
+      margin-top:2px;
+      background: linear-gradient(180deg, var(--accent2), var(--accent1));
+      box-shadow: 0 10px 22px rgba(0,0,0,.18);
+    }
+
+    .ttMain{ flex:1; min-width:0; }
+
+    .ttTime{
+      font-weight:900;
+      font-size:13px;
+      letter-spacing:.02em;
+      color: color-mix(in srgb, var(--text) 88%, var(--muted));
+    }
+
+    .ttTitle{
       margin-top:4px;
+      font-weight:900;
+      font-size:16px;
+      line-height:1.15;
+    }
+
+    .ttNotes{
+      margin-top:6px;
       font-size:12px;
       color:var(--muted);
     }
+
+    .ttActions{ display:flex; align-items:center; gap:8px; }
+
+    .ttEdit{
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:900;
+      background: color-mix(in srgb, var(--panel) 70%, transparent);
+    }
+
+    /* Make Timetable header feel larger */
+    #sectionTimetable .card h2{ font-size:20px; }
     /* Script logo (Billion Miracles–style) */
     .brandText h1{
       font-family: 'Billionaire Script', cursive;
@@ -573,7 +650,7 @@
         <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
       </div>
 
-      <div id="timetableList" style="margin-top:12px; display:grid; gap:10px;"></div>
+      <div id="timetableList" class="timetableList"></div>
     </div>
   </section>
 
@@ -933,24 +1010,35 @@
     if (!ui.timetableList) return;
 
     if (slots.length === 0){
-      ui.timetableList.innerHTML = `<div class="muted">No slots yet. Tap <b>+ Add slot</b> to plan your day.</div>`;
+      ui.timetableList.innerHTML = `
+        <div class="ttEmpty">
+          <div style="font-weight:900; margin-bottom:6px;">No timetable yet</div>
+          <div class="muted">Tap <b>+ Add slot</b> to plan your day (Gym, Work, Reading, etc.).</div>
+        </div>
+      `;
       return;
     }
 
     ui.timetableList.innerHTML = '';
     slots.forEach(s => {
       const card = document.createElement('div');
-      card.className = 'qblock';
+      card.className = 'ttSlot';
+
       const time = `${s.start || '—'} – ${s.end || '—'}`;
+      const notes = s.notes ? escapeHTML(s.notes) : '';
+
       card.innerHTML = `
-        <div class="row" style="justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-weight:900;">${escapeHTML(s.title || 'Untitled')}</div>
-            <div class="muted">${escapeHTML(time)}${s.notes ? ' • ' + escapeHTML(s.notes) : ''}</div>
-          </div>
-          <button class="smallbtn">Edit</button>
+        <div class="ttBar"></div>
+        <div class="ttMain">
+          <div class="ttTime">${escapeHTML(time)}</div>
+          <div class="ttTitle">${escapeHTML(s.title || 'Untitled')}</div>
+          ${notes ? `<div class="ttNotes">${notes}</div>` : ''}
+        </div>
+        <div class="ttActions">
+          <button class="smallbtn ttEdit" type="button">Edit</button>
         </div>
       `;
+
       card.querySelector('button').addEventListener('click', ()=> openSlotModal(s));
       ui.timetableList.appendChild(card);
     });
