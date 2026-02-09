@@ -516,16 +516,6 @@
     @media (min-width: 520px){
       .dlGrid button{ width:auto; }
     }
-    /* Downloads: make controls as big as other pages on mobile */
-    #sectionDownloads .smallbtn,
-    #sectionDownloads select,
-    #sectionDownloads input[type="date"]{
-      padding:12px 14px;
-      border-radius:14px;
-      font-size:14px;
-    }
-    #sectionDownloads select{ height:48px; }
-    #sectionDownloads .smallbtn{ height:48px; }
   </style>
 </head>
 
@@ -623,7 +613,8 @@
 
       <h3 style="margin:0 0 8px 0;">Report</h3>
       <div class="dlGrid">
-        <div class="dlRow">
+        <div class="dlRow two">
+          <div></div>
           <button class="smallbtn" id="downloadReportBtn">Download HTML report</button>
         </div>
       </div>
@@ -678,8 +669,8 @@
           <div class="seg" role="group" aria-label="Timetable template">
             <button class="segBtn active" id="ttWeekdaysBtn" type="button">Weekdays</button>
             <button class="segBtn" id="ttWeekendsBtn" type="button">Weekends</button>
-            <button class="segBtn" id="ttFullWeekBtn" type="button">Full week</button>
           </div>
+          <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
         </div>
       </div>
 
@@ -836,7 +827,6 @@
     sectionStats: document.getElementById("sectionStats"),
     sectionDownloads: document.getElementById("sectionDownloads"),
     sectionSettings: document.getElementById("sectionSettings"),
-    sectionTimetable: document.getElementById("sectionTimetable"),
 
     // stats
     statsTaskSelect: document.getElementById("statsTaskSelect"),
@@ -888,13 +878,13 @@
     wipeBtn2: document.getElementById("wipeBtn2"),
     // todayDate: document.getElementById("todayDate"),
 
-
     // timetable
+    sectionTimetable: document.getElementById("sectionTimetable"),
     ttDatePill: document.getElementById("ttDatePill"),
     timetableList: document.getElementById("timetableList"),
+    // Removed addSlotBtn reference
     ttWeekdaysBtn: document.getElementById("ttWeekdaysBtn"),
     ttWeekendsBtn: document.getElementById("ttWeekendsBtn"),
-    ttFullWeekBtn: document.getElementById("ttFullWeekBtn"),
 
     // slot modal
     slotBackdrop: document.getElementById("slotBackdrop"),
@@ -1021,7 +1011,6 @@
     if (ui.fabBtn){
       const show = (which === 'today' || which === 'timetable');
       ui.fabBtn.style.display = show ? 'grid' : 'none';
-      // On timetable, FAB adds a slot; on checklist it opens Manage Tasks
       ui.fabBtn.setAttribute('aria-label', which === 'timetable' ? 'Add slot' : 'Add task');
     }
 
@@ -1049,12 +1038,11 @@
     return (wd === 0 || wd === 6);
   }
 
-  let timetableTemplate = isWeekend(todayISO()) ? "weekend" : "weekday"; // 'weekday' | 'weekend' | 'all'
+  let timetableTemplate = isWeekend(todayISO()) ? "weekend" : "weekday"; // which template we are editing
   function setTimetableTemplate(t){
-    timetableTemplate = (t === "weekend") ? "weekend" : (t === "all" ? "all" : "weekday");
+    timetableTemplate = (t === "weekend") ? "weekend" : "weekday";
     if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.classList.toggle('active', timetableTemplate === 'weekday');
     if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.classList.toggle('active', timetableTemplate === 'weekend');
-    if (ui.ttFullWeekBtn) ui.ttFullWeekBtn.classList.toggle('active', timetableTemplate === 'all');
     renderTimetable();
   }
 
@@ -1070,9 +1058,7 @@
       return db.schedule.overrides[dateISO];
     }
 
-    if (timetableTemplate === 'weekend') return db.schedule.templates.weekend;
-    // 'all' shows the weekday template as the base (saving will apply to both)
-    return db.schedule.templates.weekday;
+    return (timetableTemplate === 'weekend') ? db.schedule.templates.weekend : db.schedule.templates.weekday;
   }
 
   function setSlots(dateISO, slots){
@@ -1080,14 +1066,8 @@
     db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
     db.schedule.overrides = db.schedule.overrides || {};
 
-    if (timetableTemplate === 'weekend'){
-      db.schedule.templates.weekend = slots;
-    } else if (timetableTemplate === 'all'){
-      db.schedule.templates.weekday = slots;
-      db.schedule.templates.weekend = slots;
-    } else {
-      db.schedule.templates.weekday = slots;
-    }
+    if (timetableTemplate === 'weekend') db.schedule.templates.weekend = slots;
+    else db.schedule.templates.weekday = slots;
 
     saveDB();
   }
@@ -1105,7 +1085,6 @@
     // Sync segmented UI
     if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.classList.toggle('active', timetableTemplate === 'weekday');
     if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.classList.toggle('active', timetableTemplate === 'weekend');
-    if (ui.ttFullWeekBtn) ui.ttFullWeekBtn.classList.toggle('active', timetableTemplate === 'all');
 
     const slots = getSlots(date)
       .slice()
@@ -1118,7 +1097,7 @@
         <div class="ttEmpty">
           <div style="font-weight:950; margin-bottom:6px;">No slots</div>
           <div class="muted">
-            Add your schedule for ${timetableTemplate === 'weekend' ? 'weekends' : (timetableTemplate === 'all' ? 'the full week' : 'weekdays')}. It repeats automatically.
+            Add your schedule for ${timetableTemplate === 'weekend' ? 'weekends' : 'weekdays'}. It repeats automatically.
           </div>
         </div>
       `;
@@ -1156,7 +1135,7 @@
   function openSlotModal(slot){
     editingSlotId = slot?.id || null;
 
-    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${timetableTemplate === 'weekend' ? 'Weekends' : (timetableTemplate === 'all' ? 'Full week' : 'Weekdays')})`;
+    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${timetableTemplate === 'weekend' ? 'Weekends' : 'Weekdays'})`;
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
     if (ui.slotEnd) ui.slotEnd.value = slot?.end || '';
     if (ui.slotTitle) ui.slotTitle.value = slot?.title || '';
@@ -1172,9 +1151,9 @@
     if (ui.slotBackdrop) ui.slotBackdrop.style.display = 'none';
   }
 
+  // Removed obsolete addSlotBtn listener
   if (ui.ttWeekdaysBtn) ui.ttWeekdaysBtn.addEventListener('click', () => setTimetableTemplate('weekday'));
   if (ui.ttWeekendsBtn) ui.ttWeekendsBtn.addEventListener('click', () => setTimetableTemplate('weekend'));
-  if (ui.ttFullWeekBtn) ui.ttFullWeekBtn.addEventListener('click', () => setTimetableTemplate('all'));
   // ---------------- Report Download ----------------
   function getDatesForRange(from, to){
     const all = getAllDatesAsc();
@@ -2121,10 +2100,10 @@
   }
 
   ui.fabBtn.addEventListener("click", () => {
-    // On timetable, FAB adds a slot; otherwise it adds a checklist task
     const ttActive = ui.sectionTimetable?.classList.contains('active');
     if (ttActive){
-      openSlotModal(null);
+      // Always add for TODAY (weekly schedule day)
+      openSlotModal(null, dayKeyFromISO(todayISO()));
     } else {
       openManage();
     }
@@ -2306,6 +2285,9 @@
   if (!window.matchMedia("(min-width: 900px)").matches){
     setTab("today");
     if (ui.fabBtn) ui.fabBtn.style.display = 'grid';
+  } else {
+    // Desktop: hide FAB
+    if (ui.fabBtn) ui.fabBtn.style.display = 'none';
   }
 // --- Remove unused openSettings/closeSettings ---
 </script>
