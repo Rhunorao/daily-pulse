@@ -237,24 +237,7 @@
     .danger{ border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
     .smallbtn{ padding:8px 10px; font-size:12px; border-radius:12px; }
 
-    .tabs{
-      position: fixed;
-      left: 10px;
-      right: 10px;
-      bottom: 10px;
-      display:none;
-      gap:6px;
-      background: color-mix(in srgb, var(--panel) 88%, transparent);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:6px;
-      z-index: 30;
-      box-shadow: 0 18px 70px rgba(0,0,0,.35);
-      backdrop-filter: blur(10px);
-      max-width: 720px;
-      margin: 0 auto;
-      box-sizing: border-box;
-    }
+    /* Removed duplicate .tabs that hid tabs on all devices */
     .tab{
       flex:1;
       padding:10px 6px;
@@ -485,7 +468,9 @@
 <body>
 <header>
   <div class="wrap headerBar">
-    <div class="headerLeft" aria-hidden="true"></div>
+    <div class="headerLeft">
+      <button class="smallbtn iconBtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+    </div>
 
     <div class="brand" aria-label="Daily Pulse">
       <div class="brandText">
@@ -494,7 +479,6 @@
     </div>
 
     <div class="headerActions">
-      <button class="smallbtn iconBtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
       <button class="smallbtn danger" id="wipeBtn" title="Clear all data" aria-label="Clear all data">Clear</button>
     </div>
   </div>
