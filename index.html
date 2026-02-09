@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
-  <link rel="manifest" id="manifestLink" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Billionaire+Script&display=swap" rel="stylesheet">
@@ -502,6 +502,20 @@
     }
     .qgrid{ display:grid; gap:10px; grid-template-columns: 1fr 1fr; }
     @media (max-width: 520px){ .qgrid{ grid-template-columns: 1fr; } }
+
+    /* Downloads layout: keep controls full-width and aligned like Timetable */
+    .dlGrid{ display:grid; gap:10px; width:100%; }
+    .dlGrid .dlRow{ display:grid; grid-template-columns: 1fr; gap:10px; width:100%; }
+    @media (min-width: 520px){
+      .dlGrid .dlRow{ grid-template-columns: 1fr 1fr auto; align-items:end; }
+      .dlGrid .dlRow.two{ grid-template-columns: 1fr auto; }
+    }
+    .dlGrid label{ width:100%; min-width:0; }
+    .dlGrid input, .dlGrid select{ width:100%; }
+    .dlGrid button{ width:100%; }
+    @media (min-width: 520px){
+      .dlGrid button{ width:auto; }
+    }
   </style>
 </head>
 
@@ -598,35 +612,42 @@
       <div class="divider"></div>
 
       <h3 style="margin:0 0 8px 0;">Report</h3>
-      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:end;">
-        <button class="smallbtn" id="downloadReportBtn">Download HTML report</button>
+      <div class="dlGrid">
+        <div class="dlRow two">
+          <div></div>
+          <button class="smallbtn" id="downloadReportBtn">Download HTML report</button>
+        </div>
       </div>
       <div class="muted" style="margin-top:6px;">Includes KPIs, charts, and tables for the chosen range.</div>
 
       <div class="divider"></div>
 
       <h3 style="margin:0 0 8px 0;">CSV</h3>
-      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:end;">
-        <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:180px;">
-          CSV type
-          <select id="csvModeSelect">
-            <option value="day" selected>Day CSV (today)</option>
-            <option value="range">Range CSV</option>
-          </select>
-        </label>
+      <div class="dlGrid">
+        <div class="dlRow">
+          <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+            CSV type
+            <select id="csvModeSelect">
+              <option value="day" selected>Day CSV (today)</option>
+              <option value="range">Range CSV</option>
+            </select>
+          </label>
 
-        <div id="rangeInputs" class="row" style="gap:10px; align-items:end; display:none;">
-          <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
-            From
-            <input type="date" id="dlFrom" />
-          </label>
-          <label class="muted" style="display:flex; flex-direction:column; gap:6px; min-width:140px;">
-            To
-            <input type="date" id="dlTo" />
-          </label>
+          <div id="rangeInputs" style="display:none;">
+            <div class="dlRow" style="grid-template-columns: 1fr 1fr;">
+              <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+                From
+                <input type="date" id="dlFrom" />
+              </label>
+              <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+                To
+                <input type="date" id="dlTo" />
+              </label>
+            </div>
+          </div>
+
+          <button class="smallbtn" id="downloadCsvBtn">Download CSV</button>
         </div>
-
-        <button class="smallbtn" id="downloadCsvBtn">Download CSV</button>
       </div>
 
       <div class="divider"></div>
@@ -2205,7 +2226,7 @@
   // Downloads page actions
   function syncCsvUI(){
     const mode = ui.csvModeSelect?.value || 'day';
-    if (ui.rangeInputs) ui.rangeInputs.style.display = (mode === 'range') ? 'flex' : 'none';
+    if (ui.rangeInputs) ui.rangeInputs.style.display = (mode === 'range') ? 'block' : 'none';
     if (ui.dlTo) ui.dlTo.value = ui.dlTo.value || todayISO();
   }
 
@@ -2254,24 +2275,3 @@
 </script>
 </body>
 </html>
-  // Runtime manifest (single-file friendly). Put icon-512.png next to this HTML file.
-  (function setupManifest(){
-    const link = document.getElementById('manifestLink');
-    if (!link) return;
-    const manifest = {
-      name: 'Daily Pulse',
-      short_name: 'Daily Pulse',
-      start_url: '.',
-      display: 'standalone',
-      background_color: '#0b0f14',
-      theme_color: '#0b0f14',
-      icons: [
-        { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
-      ]
-    };
-    try {
-      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-    } catch(e){}
-  })();
