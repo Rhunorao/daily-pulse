@@ -98,6 +98,7 @@
       grid-template-columns: 76px 18px 1fr;
       gap:10px;
       align-items:stretch;
+      width:100%;
     }
 
     .ttTimeCol{
@@ -137,6 +138,8 @@
 
     .ttCard{
       width:100%;
+      max-width:100%;
+      min-width:0;
       padding:14px;
       border-radius:18px;
       border:1px solid color-mix(in srgb, var(--accent1) 18%, var(--border));
@@ -155,7 +158,7 @@
       color:var(--muted);
     }
 
-    .ttCardTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .ttCardTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
 
     .ttEdit{
       border-radius:14px;
@@ -193,7 +196,7 @@
       background: color-mix(in srgb, var(--panel) 88%, transparent);
       border:1px solid var(--border);
       border-radius:18px;
-      padding:6px;
+      padding:8px;
       z-index: 30;
       box-shadow: 0 18px 70px rgba(0,0,0,.35);
       backdrop-filter: blur(10px);
@@ -240,7 +243,7 @@
     /* Removed duplicate .tabs that hid tabs on all devices */
     .tab{
       flex:1;
-      padding:10px 6px;
+      padding:12px 8px;
       border-radius:14px;
       border:1px solid transparent;
       background:transparent;
@@ -252,7 +255,7 @@
       gap:6px;
       min-width: 0;
     }
-    .tab .ico{ font-size:16px; line-height:1; }
+    .tab .ico{ font-size:18px; line-height:1; }
     .tab .lbl{ display:none; }
     .tab.active{
       background:var(--panel2);
@@ -442,7 +445,13 @@
     .modal h3{ margin:0 0 8px 0; }
     .modal .footer{ display:flex; gap:10px; justify-content:flex-end; margin-top: 12px; }
     .modal label{ font-size:12px; color:#b7c3d6; display:block; margin-top:10px; }
-    .modal input, .modal select{ width: 100%; margin-top:6px; }
+    .modal input, .modal select{ width: 100%; margin-top:6px; font-size:16px; }
+
+    /* iOS time inputs: make them consistent */
+    input[type="time"], input[type="date"]{
+      -webkit-appearance: none;
+      appearance: none;
+    }
 
     .divider{ height:1px; background:var(--border); margin:12px 0; }
 
@@ -460,7 +469,7 @@
       z-index:-1;
       filter: blur(2px);
     }
-    .qgrid{ display:grid; gap:10px; grid-template-columns: 1.2fr .8fr; }
+    .qgrid{ display:grid; gap:10px; grid-template-columns: 1fr 1fr; }
     @media (max-width: 520px){ .qgrid{ grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -488,7 +497,7 @@
   <div class="tabs" role="tablist" aria-label="Bottom navigation">
     <button class="tab active" id="tabToday" type="button" aria-label="Checklist"><span class="ico">✅</span><span class="lbl">Checklist</span></button>
     <button class="tab" id="tabStats" type="button" aria-label="Stats"><span class="ico">📈</span><span class="lbl">Stats</span></button>
-    <button class="tab" id="tabDownloads" type="button" aria-label="Logs"><span class="ico">🗂️</span><span class="lbl">Logs</span></button>
+    <button class="tab" id="tabDownloads" type="button" aria-label="Downloads"><span class="ico">⬇️</span><span class="lbl">Downloads</span></button>
     <button class="tab" id="tabTimetable" type="button" aria-label="Timetable"><span class="ico">🗓️</span><span class="lbl">Timetable</span></button>
     <button class="tab" id="tabSettings" type="button" aria-label="Settings"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
   </div>
@@ -876,10 +885,29 @@
     return { ...t, icon: "✅" };
   });
   saveDB();
-  // Timetable storage (weekly template + per-date overrides)
-  // db.schedule = { weekly: {0..6:[slots]}, overrides:{[date]:[slots]} }
-  db.schedule = db.schedule || { weekly:{}, overrides:{} };
-  db.schedule.weekly = db.schedule.weekly || {};
+  // Timetable storage (templates + per-date overrides)
+  // db.schedule = { templates:{ weekday:[slots], weekend:[slots] }, overrides:{[date]:[slots]} }
+  db.schedule = db.schedule || { templates:{ weekday:[], weekend:[] }, overrides:{} };
+
+  // Migration from older weekly-per-day format if present
+  if (db.schedule.weekly && !db.schedule.templates){
+    const pickFirstNonEmpty = (arr) => {
+      for (const k of arr){
+        const v = db.schedule.weekly[String(k)];
+        if (Array.isArray(v) && v.length) return v;
+      }
+      return [];
+    };
+    db.schedule.templates = {
+      weekday: pickFirstNonEmpty([1,2,3,4,5]),
+      weekend: pickFirstNonEmpty([6,0])
+    };
+    delete db.schedule.weekly;
+  }
+
+  db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
+  db.schedule.templates.weekday = Array.isArray(db.schedule.templates.weekday) ? db.schedule.templates.weekday : [];
+  db.schedule.templates.weekend = Array.isArray(db.schedule.templates.weekend) ? db.schedule.templates.weekend : [];
   db.schedule.overrides = db.schedule.overrides || {};
   saveDB();
 
@@ -936,36 +964,41 @@
     return d.getDay(); // 0=Sun ... 6=Sat
   }
 
+  function isWeekend(dateISO){
+    const wd = weekdayIndex(dateISO);
+    return (wd === 0 || wd === 6);
+  }
+
   let timetableMode = "default"; // "default" or "today"
   function setTimetableMode(mode){
     timetableMode = (mode === "today") ? "today" : "default";
-    if (ui.ttModeBtn) ui.ttModeBtn.textContent = (timetableMode === "today") ? "Today" : "Default";
     renderTimetable();
   }
 
   function getSlots(dateISO){
-    db.schedule = db.schedule || { weekly:{}, overrides:{} };
-    db.schedule.weekly = db.schedule.weekly || {};
+    db.schedule = db.schedule || { templates:{ weekday:[], weekend:[] }, overrides:{} };
+    db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
+    db.schedule.templates.weekday = Array.isArray(db.schedule.templates.weekday) ? db.schedule.templates.weekday : [];
+    db.schedule.templates.weekend = Array.isArray(db.schedule.templates.weekend) ? db.schedule.templates.weekend : [];
     db.schedule.overrides = db.schedule.overrides || {};
 
     if (timetableMode === "today"){
       return Array.isArray(db.schedule.overrides[dateISO]) ? db.schedule.overrides[dateISO] : [];
     }
 
-    const wd = String(weekdayIndex(dateISO));
-    return Array.isArray(db.schedule.weekly[wd]) ? db.schedule.weekly[wd] : [];
+    return isWeekend(dateISO) ? db.schedule.templates.weekend : db.schedule.templates.weekday;
   }
 
   function setSlots(dateISO, slots){
-    db.schedule = db.schedule || { weekly:{}, overrides:{} };
-    db.schedule.weekly = db.schedule.weekly || {};
+    db.schedule = db.schedule || { templates:{ weekday:[], weekend:[] }, overrides:{} };
+    db.schedule.templates = db.schedule.templates || { weekday:[], weekend:[] };
     db.schedule.overrides = db.schedule.overrides || {};
 
     if (timetableMode === "today"){
       db.schedule.overrides[dateISO] = slots;
     } else {
-      const wd = String(weekdayIndex(dateISO));
-      db.schedule.weekly[wd] = slots;
+      if (isWeekend(dateISO)) db.schedule.templates.weekend = slots;
+      else db.schedule.templates.weekday = slots;
     }
     saveDB();
   }
@@ -974,16 +1007,16 @@
     const date = todayISO();
 
     const wd = weekdayIndex(date);
-    const wdNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    const bucket = isWeekend(date) ? "Weekends" : "Weekdays";
 
     // Header pill shows what is being displayed
     const hasOverride = Array.isArray(db.schedule?.overrides?.[date]) && db.schedule.overrides[date].length > 0;
     const modeLabel = (timetableMode === "today")
       ? `Today override • ${date}`
-      : `Default • ${wdNames[wd]}`;
+      : `${bucket}`;
 
     if (ui.ttDatePill) ui.ttDatePill.textContent = modeLabel;
-    if (ui.ttModeBtn) ui.ttModeBtn.textContent = (timetableMode === "today") ? "Today" : "Default";
+    if (ui.ttModeBtn) ui.ttModeBtn.textContent = (timetableMode === "today") ? "Today" : bucket;
 
     const slots = getSlots(date)
       .slice()
@@ -998,7 +1031,7 @@
           <div class="muted">
             ${timetableMode === "today"
               ? "Add a one-off plan for today (use this for weekends or special days)."
-              : "Add your default schedule for this weekday. It repeats automatically."}
+              : "Add your default schedule for this ${bucket.toLowerCase()}. It repeats automatically."}
             ${(!hasOverride && timetableMode !== "today") ? "" : ""}
           </div>
         </div>
