@@ -62,28 +62,24 @@
       text-align:center;
     }
     .brandMark{
-      width:30px;
-      height:30px;
+      width:40px;
+      height:40px;
       display:grid;
       place-items:center;
-      border-radius:12px;
-      border:1px solid #2b3a52;
-      background:var(--panel2);
-      flex:0 0 30px;
+      border-radius:16px;
+      border:1px solid color-mix(in srgb, var(--accent1) 35%, var(--border));
+      background:
+        radial-gradient(220px 160px at 20% 10%, color-mix(in srgb, var(--accent2) 40%, transparent), transparent 70%),
+        radial-gradient(200px 140px at 90% 0%, color-mix(in srgb, var(--accent1) 40%, transparent), transparent 70%),
+        var(--panel2);
+      flex:0 0 40px;
+      font-weight:1000;
+      letter-spacing:.04em;
+      font-size:14px;
     }
     .brandText{ display:flex; flex-direction:column; align-items:center; line-height:1.1; }
-    .brandDate{
-      margin-top:6px;
-      font-size:11px;
-      color:var(--muted);
-      display:inline-flex;
-      align-self:center;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1));
-      background: color-mix(in srgb, var(--panel2) 70%, transparent);
-    }
-    /* Timetable */
+    /* Removed .brandDate */
+    /* Timetable (iOS-like timeline) */
     .timetableList{
       margin-top:14px;
       display:grid;
@@ -93,82 +89,91 @@
     .ttEmpty{
       padding:14px;
       border-radius:16px;
-      border:1px dashed color-mix(in srgb, var(--accent1) 35%, var(--border));
-      background: color-mix(in srgb, var(--panel2) 60%, transparent);
+      border:1px dashed color-mix(in srgb, var(--accent1) 28%, var(--border));
+      background: color-mix(in srgb, var(--panel2) 70%, transparent);
     }
 
-    .ttSlot{
-      width:100%;
+    .ttRow{
+      display:grid;
+      grid-template-columns: 76px 18px 1fr;
+      gap:10px;
+      align-items:stretch;
+    }
+
+    .ttTimeCol{
+      padding-top:6px;
+      text-align:right;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.02em;
+    }
+
+    .ttRail{
+      position:relative;
       display:flex;
-      gap:12px;
-      align-items:flex-start;
+      justify-content:center;
+    }
+
+    .ttDot{
+      width:12px;
+      height:12px;
+      border-radius:999px;
+      margin-top:10px;
+      background: linear-gradient(180deg, var(--accent2), var(--accent1));
+      box-shadow: 0 10px 22px rgba(0,0,0,.25);
+      border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+    }
+
+    .ttRail::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      width:2px;
+      background: color-mix(in srgb, var(--border) 70%, transparent);
+      border-radius:999px;
+    }
+
+    .ttCard{
+      width:100%;
       padding:14px;
       border-radius:18px;
-      border:1px solid color-mix(in srgb, var(--accent1) 28%, var(--border));
-      background:
-        radial-gradient(420px 260px at 10% 0%, color-mix(in srgb, var(--accent2) 28%, transparent), transparent 68%),
-        radial-gradient(380px 240px at 90% 10%, color-mix(in srgb, var(--accent1) 28%, transparent), transparent 72%),
-        var(--panel2);
-      overflow:hidden;
-    }
-
-    .ttBar{
-      width:10px;
-      border-radius:999px;
-      flex:0 0 10px;
-      margin-top:2px;
-      background: linear-gradient(180deg, var(--accent2), var(--accent1));
-      box-shadow: 0 10px 22px rgba(0,0,0,.18);
-    }
-
-    .ttMain{ flex:1; min-width:0; }
-
-    .ttTime{
-      font-weight:900;
-      font-size:13px;
-      letter-spacing:.02em;
-      color: color-mix(in srgb, var(--text) 88%, var(--muted));
+      border:1px solid color-mix(in srgb, var(--accent1) 18%, var(--border));
+      background: linear-gradient(180deg, color-mix(in srgb, var(--panel2) 75%, transparent), var(--panel2));
     }
 
     .ttTitle{
-      margin-top:4px;
-      font-weight:900;
-      font-size:16px;
+      font-weight:950;
+      font-size:17px;
       line-height:1.15;
     }
 
-    .ttNotes{
+    .ttMeta{
       margin-top:6px;
       font-size:12px;
       color:var(--muted);
     }
 
-    .ttActions{ display:flex; align-items:center; gap:8px; }
+    .ttCardTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
 
     .ttEdit{
       border-radius:14px;
-      padding:10px 12px;
+      padding:9px 10px;
       font-weight:900;
-      background: color-mix(in srgb, var(--panel) 70%, transparent);
+      background: color-mix(in srgb, var(--panel) 75%, transparent);
     }
 
-    /* Make Timetable header feel larger */
     #sectionTimetable .card h2{ font-size:20px; }
     /* Script logo (Billion Miracles–style) */
     .brandText h1{
       font-family: 'Billionaire Script', cursive;
-      font-size: 22px;
+      font-size: 30px;
       letter-spacing: .02em;
       margin:0;
     }
 
-    .dateText{
-      font-size:14px;
-      color:var(--muted);
-      padding:6px 12px;
-      border-radius:10px;
-      background:var(--panel2);
-    }
+    /* Removed .dateText */
 
     .headerActions{
       display:flex;
@@ -188,7 +193,7 @@
     .drawer{
       position:absolute;
       left:0; top:0; bottom:0;
-      width: min(320px, 86vw);
+      width: min(460px, 72vw);
       background: var(--panel);
       border-right: 1px solid var(--border);
       box-shadow: 0 18px 70px rgba(0,0,0,.45);
@@ -215,26 +220,11 @@
     .drawerItem:hover{ filter: brightness(1.06); }
     .drawerFoot{ margin-top:auto; padding-top:10px; border-top:1px solid var(--border); }
 
-    .dateWrap{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 8px;
-      border:1px solid var(--border);
-      background: color-mix(in srgb, var(--panel) 70%, transparent);
-      border-radius:14px;
-    }
-    .dateWrap .muted{ margin:0; font-size:11px; }
-    .dateWrap input[type="date"]{
-      border:none;
-      background:transparent;
-      padding:6px 6px;
-      min-width: 138px;
-    }
+    /* Removed .dateWrap and nested rules */
 
     .iconBtn{
-      width:40px;
-      height:40px;
+      width:44px;
+      height:44px;
       padding:0;
       border-radius:14px;
       display:grid;
@@ -246,8 +236,8 @@
       header{ padding:10px 12px; }
       .headerBar{ gap:8px; }
       .headerActions{ gap:6px; }
-      .iconBtn{ width:38px; height:38px; border-radius:14px; }
-      .brandMark{ width:28px; height:28px; border-radius:12px; }
+      .iconBtn{ width:42px; height:42px; border-radius:16px; }
+      .brandMark{ width:38px; height:38px; border-radius:16px; }
     }
 
     .wrap{ max-width: 1100px; margin:0 auto; }
@@ -362,22 +352,22 @@
       border:1px solid var(--border); border-radius:14px; background:var(--panel2);
     }
     .tick{
-      width:28px; height:28px; border-radius:12px;
+      width:32px; height:32px; border-radius:12px;
       display:grid; place-items:center;
       border:1px solid color-mix(in srgb, var(--accent1) 30%, var(--border)); user-select:none;
       font-size:16px;
-      flex: 0 0 28px;
+      flex: 0 0 32px;
     }
     .icon{
-      width:34px; height:34px; border-radius:14px;
+      width:42px; height:42px; border-radius:14px;
       display:grid; place-items:center;
       background: color-mix(in srgb, var(--accent1) 16%, var(--panel2));
       border: 1px solid color-mix(in srgb, var(--accent1) 30%, var(--border));
       font-size: 16px;
-      flex: 0 0 34px;
+      flex: 0 0 42px;
     }
     .item.done .tick{ border-color:#3b6a3b; }
-    .title{ flex:1; font-weight:800; font-size:15px; }
+    .title{ flex:1; font-weight:900; font-size:16px; }
     .sub{ font-size:12px; color:var(--muted); margin-top:2px; }
     .item.done .title{ text-decoration: line-through; opacity:.82; }
 
@@ -518,9 +508,9 @@
     </div>
 
     <div class="brand" aria-label="Daily Pulse">
+      <div class="brandMark" aria-hidden="true">DP</div>
       <div class="brandText">
         <h1>Daily Pulse</h1>
-        <div id="todayDate" class="brandDate"></div>
       </div>
     </div>
 
@@ -615,6 +605,14 @@
 
       <div class="divider"></div>
 
+      <h3 style="margin:0 0 8px 0;">Report</h3>
+      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:end;">
+        <button class="smallbtn" id="downloadReportBtn">Download HTML report</button>
+      </div>
+      <div class="muted" style="margin-top:6px;">Includes KPIs, charts, and tables for the chosen range.</div>
+
+      <div class="divider"></div>
+
       <h3 style="margin:0 0 8px 0;">CSV</h3>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:end;">
         <button class="smallbtn" id="downloadDayBtn">Day CSV</button>
@@ -647,7 +645,10 @@
 
       <div class="row" style="justify-content: space-between; align-items:center;">
         <div class="pill" id="ttDatePill">Today</div>
-        <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
+        <div class="row" style="gap:8px;">
+          <button class="smallbtn" id="ttModeBtn" title="Switch between Default schedule and Today override">Default</button>
+          <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
+        </div>
       </div>
 
       <div id="timetableList" class="timetableList"></div>
@@ -843,13 +844,14 @@
     dlTo: document.getElementById("dlTo"),
     downloadRangeBtn: document.getElementById("downloadRangeBtn"),
     downloadLinkArea: document.getElementById("downloadLinkArea"),
+    downloadReportBtn: document.getElementById("downloadReportBtn"),
 
     // settings page
     openTasksBtn: document.getElementById("openTasksBtn"),
     deleteAllTasksBtn: document.getElementById("deleteAllTasksBtn"),
     goDownloadsBtn: document.getElementById("goDownloadsBtn"),
     wipeBtn2: document.getElementById("wipeBtn2"),
-    todayDate: document.getElementById("todayDate"),
+    // todayDate: document.getElementById("todayDate"),
 
     // drawer
     menuBtn: document.getElementById("menuBtn"),
@@ -861,6 +863,7 @@
     ttDatePill: document.getElementById("ttDatePill"),
     timetableList: document.getElementById("timetableList"),
     addSlotBtn: document.getElementById("addSlotBtn"),
+    ttModeBtn: document.getElementById("ttModeBtn"),
 
     // slot modal
     slotBackdrop: document.getElementById("slotBackdrop"),
@@ -923,8 +926,11 @@
     return { ...t, icon: "✅" };
   });
   saveDB();
-  // Timetable storage
-  db.schedule = db.schedule || {}; // { [date]: [ {id,start,end,title,notes} ] }
+  // Timetable storage (weekly template + per-date overrides)
+  // db.schedule = { weekly: {0..6:[slots]}, overrides:{[date]:[slots]} }
+  db.schedule = db.schedule || { weekly:{}, overrides:{} };
+  db.schedule.weekly = db.schedule.weekly || {};
+  db.schedule.overrides = db.schedule.overrides || {};
   saveDB();
 
   function saveDB(){
@@ -992,28 +998,76 @@
     });
   }
   // ---------------- Timetable ----------------
-  function getSlots(date){
-    db.schedule = db.schedule || {};
-    return Array.isArray(db.schedule[date]) ? db.schedule[date] : [];
+  function weekdayIndex(dateISO){
+    const d = new Date(dateISO + "T00:00:00");
+    return d.getDay(); // 0=Sun ... 6=Sat
   }
-  function setSlots(date, slots){
-    db.schedule = db.schedule || {};
-    db.schedule[date] = slots;
+
+  let timetableMode = "default"; // "default" or "today"
+  function setTimetableMode(mode){
+    timetableMode = (mode === "today") ? "today" : "default";
+    if (ui.ttModeBtn) ui.ttModeBtn.textContent = (timetableMode === "today") ? "Today" : "Default";
+    renderTimetable();
+  }
+
+  function getSlots(dateISO){
+    db.schedule = db.schedule || { weekly:{}, overrides:{} };
+    db.schedule.weekly = db.schedule.weekly || {};
+    db.schedule.overrides = db.schedule.overrides || {};
+
+    if (timetableMode === "today"){
+      return Array.isArray(db.schedule.overrides[dateISO]) ? db.schedule.overrides[dateISO] : [];
+    }
+
+    const wd = String(weekdayIndex(dateISO));
+    return Array.isArray(db.schedule.weekly[wd]) ? db.schedule.weekly[wd] : [];
+  }
+
+  function setSlots(dateISO, slots){
+    db.schedule = db.schedule || { weekly:{}, overrides:{} };
+    db.schedule.weekly = db.schedule.weekly || {};
+    db.schedule.overrides = db.schedule.overrides || {};
+
+    if (timetableMode === "today"){
+      db.schedule.overrides[dateISO] = slots;
+    } else {
+      const wd = String(weekdayIndex(dateISO));
+      db.schedule.weekly[wd] = slots;
+    }
     saveDB();
   }
 
   function renderTimetable(){
     const date = todayISO();
-    if (ui.ttDatePill) ui.ttDatePill.textContent = date;
 
-    const slots = getSlots(date).slice().sort((a,b) => (a.start || '').localeCompare(b.start || ''));
+    const wd = weekdayIndex(date);
+    const wdNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+    // Header pill shows what is being displayed
+    const hasOverride = Array.isArray(db.schedule?.overrides?.[date]) && db.schedule.overrides[date].length > 0;
+    const modeLabel = (timetableMode === "today")
+      ? `Today override • ${date}`
+      : `Default • ${wdNames[wd]}`;
+
+    if (ui.ttDatePill) ui.ttDatePill.textContent = modeLabel;
+    if (ui.ttModeBtn) ui.ttModeBtn.textContent = (timetableMode === "today") ? "Today" : "Default";
+
+    const slots = getSlots(date)
+      .slice()
+      .sort((a,b) => (a.start || '').localeCompare(b.start || ''));
+
     if (!ui.timetableList) return;
 
     if (slots.length === 0){
       ui.timetableList.innerHTML = `
         <div class="ttEmpty">
-          <div style="font-weight:900; margin-bottom:6px;">No timetable yet</div>
-          <div class="muted">Tap <b>+ Add slot</b> to plan your day (Gym, Work, Reading, etc.).</div>
+          <div style="font-weight:950; margin-bottom:6px;">No slots</div>
+          <div class="muted">
+            ${timetableMode === "today"
+              ? "Add a one-off plan for today (use this for weekends or special days)."
+              : "Add your default schedule for this weekday. It repeats automatically."}
+            ${(!hasOverride && timetableMode !== "today") ? "" : ""}
+          </div>
         </div>
       `;
       return;
@@ -1021,26 +1075,28 @@
 
     ui.timetableList.innerHTML = '';
     slots.forEach(s => {
-      const card = document.createElement('div');
-      card.className = 'ttSlot';
+      const row = document.createElement('div');
+      row.className = 'ttRow';
 
       const time = `${s.start || '—'} – ${s.end || '—'}`;
       const notes = s.notes ? escapeHTML(s.notes) : '';
 
-      card.innerHTML = `
-        <div class="ttBar"></div>
-        <div class="ttMain">
-          <div class="ttTime">${escapeHTML(time)}</div>
-          <div class="ttTitle">${escapeHTML(s.title || 'Untitled')}</div>
-          ${notes ? `<div class="ttNotes">${notes}</div>` : ''}
-        </div>
-        <div class="ttActions">
-          <button class="smallbtn ttEdit" type="button">Edit</button>
+      row.innerHTML = `
+        <div class="ttTimeCol">${escapeHTML(s.start || '—')}</div>
+        <div class="ttRail"><div class="ttDot"></div></div>
+        <div class="ttCard">
+          <div class="ttCardTop">
+            <div style="min-width:0;">
+              <div class="ttTitle">${escapeHTML(s.title || 'Untitled')}</div>
+              <div class="ttMeta">${escapeHTML(time)}${notes ? ' • ' + notes : ''}</div>
+            </div>
+            <button class="smallbtn ttEdit" type="button">Edit</button>
+          </div>
         </div>
       `;
 
-      card.querySelector('button').addEventListener('click', ()=> openSlotModal(s));
-      ui.timetableList.appendChild(card);
+      row.querySelector('button').addEventListener('click', ()=> openSlotModal(s));
+      ui.timetableList.appendChild(row);
     });
   }
 
@@ -1048,7 +1104,7 @@
   function openSlotModal(slot){
     editingSlotId = slot?.id || null;
 
-    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : 'Add slot';
+    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : ((timetableMode === 'today') ? 'Add slot (Today)' : 'Add slot (Default)');
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
     if (ui.slotEnd) ui.slotEnd.value = slot?.end || '';
     if (ui.slotTitle) ui.slotTitle.value = slot?.title || '';
@@ -1065,6 +1121,179 @@
   }
 
   if (ui.addSlotBtn) ui.addSlotBtn.addEventListener('click', ()=> openSlotModal(null));
+  if (ui.ttModeBtn){
+    ui.ttModeBtn.addEventListener('click', () => {
+      setTimetableMode(timetableMode === 'default' ? 'today' : 'default');
+    });
+  }
+  // ---------------- Report Download ----------------
+  function getDatesForRange(from, to){
+    const all = getAllDatesAsc();
+    return all.filter(d => inRange(d, from, to));
+  }
+
+  function buildReportHTML(from, to){
+    const cs = getComputedStyle(document.documentElement);
+    const bg = cs.getPropertyValue('--bg').trim();
+    const panel = cs.getPropertyValue('--panel').trim();
+    const panel2 = cs.getPropertyValue('--panel2').trim();
+    const border = cs.getPropertyValue('--border').trim();
+    const text = cs.getPropertyValue('--text').trim();
+    const muted = cs.getPropertyValue('--muted').trim();
+
+    const dates = getDatesForRange(from, to);
+    const rangeLabel = `${from || '…'} → ${to || '…'}`;
+
+    // Snapshot charts as images for: Overall + each task (numeric if present, else done)
+    const originalSel = ui.statsTaskSelect.value;
+    const originalRange = ui.rangeSelect.value;
+
+    // Force chart to use the same date set
+    const chartImages = [];
+
+    // Build list of views
+    const views = ['__overall__'].concat((db.tasks || []).map(t => t.id));
+
+    views.forEach(v => {
+      ui.statsTaskSelect.value = v;
+      drawChart(dates);
+      const title = (v === '__overall__') ? 'Overall completion %' : (db.tasks.find(t => t.id === v)?.name || 'Task');
+      let img = '';
+      try { img = ui.chart.toDataURL('image/png'); } catch(e){ img = ''; }
+      chartImages.push({ title, img, id: v });
+    });
+
+    // Restore UI state
+    ui.statsTaskSelect.value = originalSel;
+    ui.rangeSelect.value = originalRange;
+    try { renderStats(); } catch(e){}
+
+    // KPIs
+    let daysLogged = dates.length;
+    let complete = 0;
+    let sumPct = 0;
+    dates.forEach(d => {
+      const day = db.days[d];
+      const pct = completionPct(day);
+      sumPct += pct;
+      if (isDayComplete(day)) complete++;
+    });
+    const avg = daysLogged ? Math.round(sumPct / daysLogged) : 0;
+
+    // Tables
+    function tableForView(viewId){
+      const rows = [...dates].reverse().map(d => {
+        const day = db.days[d];
+        const comp = completionPct(day);
+        if (viewId === '__overall__'){
+          const doneCount = (db.tasks || []).filter(t => !!day.done?.[t.id]).length;
+          return `<tr><td>${d}</td><td>${comp}%</td><td>${doneCount}/${db.tasks.length}</td></tr>`;
+        }
+        const t = db.tasks.find(x => x.id === viewId);
+        if (!t) return '';
+        const done = day.done?.[t.id] ? 'Yes' : 'No';
+        const det = pickTaskDetailField(t);
+        let detail = '';
+        if (det){
+          const v = day.answers?.[t.id]?.[det.q.key];
+          detail = (v !== undefined && v !== '') ? String(v) : '';
+        }
+        return `<tr><td>${d}</td><td>${comp}%</td><td>${done}</td><td>${escapeHTML(detail)}</td></tr>`;
+      }).join('');
+
+      if (viewId === '__overall__'){
+        return `
+          <table>
+            <thead><tr><th>Date</th><th>Completion</th><th>Tasks done</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }
+
+      const t = db.tasks.find(x => x.id === viewId);
+      const det = t ? pickTaskDetailField(t) : null;
+      const head = det ? escapeHTML(det.q.label) : 'Details';
+      return `
+        <table>
+          <thead><tr><th>Date</th><th>Completion</th><th>Done</th><th>${head}</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    const chartsHTML = chartImages.map(c => {
+      const imgTag = c.img ? `<img src="${c.img}" alt="${escapeHTML(c.title)}" />` : '<div class="muted">Chart not available</div>';
+      return `
+        <section class="block">
+          <h2>${escapeHTML(c.title)}</h2>
+          <div class="chart">${imgTag}</div>
+          <div class="table">${tableForView(c.id)}</div>
+        </section>
+      `;
+    }).join('');
+
+    return `
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daily Pulse Report</title>
+  <style>
+    :root{ --bg:${bg}; --panel:${panel}; --panel2:${panel2}; --border:${border}; --text:${text}; --muted:${muted}; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 18px 14px 36px; }
+    .top{
+      display:flex; justify-content:space-between; gap:12px; align-items:flex-end;
+      border-bottom:1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px;
+    }
+    .title{ font-size:26px; font-weight:1000; letter-spacing:.02em; }
+    .sub{ color:var(--muted); font-size:12px; }
+    .kpis{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin: 14px 0; }
+    .kpi{ background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px; }
+    .kpi .n{ font-size:22px; font-weight:1000; margin-top:4px; }
+    @media (max-width: 820px){ .kpis{ grid-template-columns: repeat(2, 1fr);} }
+    .block{ background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:14px; margin-top: 12px; }
+    h2{ margin: 0 0 10px 0; font-size: 18px; }
+    .chart{ background:var(--panel2); border:1px solid var(--border); border-radius:16px; padding:10px; overflow:hidden; }
+    .chart img{ width:100%; height:auto; display:block; }
+    .table{ margin-top: 10px; overflow:auto; border:1px solid var(--border); border-radius:16px; }
+    table{ width:100%; border-collapse: collapse; background:var(--panel2); }
+    th, td{ padding:10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th{ position:sticky; top:0; background:var(--panel2); font-size:12px; color:var(--muted); font-weight:900; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="title">Daily Pulse Report</div>
+        <div class="sub">Range: ${escapeHTML(rangeLabel)}</div>
+      </div>
+      <div class="sub">Generated: ${escapeHTML(new Date().toLocaleString())}</div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="sub">Days logged</div><div class="n">${daysLogged}</div></div>
+      <div class="kpi"><div class="sub">Days completed</div><div class="n">${complete}</div></div>
+      <div class="kpi"><div class="sub">Avg completion</div><div class="n">${avg}%</div></div>
+      <div class="kpi"><div class="sub">Tasks</div><div class="n">${(db.tasks||[]).length}</div></div>
+    </div>
+
+    ${chartsHTML}
+  </div>
+</body>
+</html>`;
+  }
+
+  function downloadHTMLReport(){
+    const from = parseISODate(ui.dlFrom?.value);
+    const to = parseISODate(ui.dlTo?.value) || todayISO();
+    const html = buildReportHTML(from || '', to || '');
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    downloadBlob(`daily-pulse-report-${(from||'start')}-to-${(to||todayISO())}.html`, blob);
+  }
   if (ui.slotCloseBtn) ui.slotCloseBtn.addEventListener('click', closeSlotModal);
   if (ui.slotBackdrop) ui.slotBackdrop.addEventListener('click', (e)=>{ if (e.target===ui.slotBackdrop) closeSlotModal(); });
 
@@ -1980,6 +2209,7 @@
     const to = parseISODate(ui.dlTo?.value);
     exportCSVRange(from || "", to || "");
   });
+  if (ui.downloadReportBtn) ui.downloadReportBtn && ui.downloadReportBtn.addEventListener('click', downloadHTMLReport);
 
   // Settings page actions
   if (ui.openTasksBtn) ui.openTasksBtn.addEventListener("click", () => openManage());
@@ -1999,17 +2229,9 @@
     renderTimetable();
   }
 
-  // Fill today's date in header
-  if (ui.todayDate) {
-    const today = new Date();
-    ui.todayDate.textContent = today.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
+  // Timetable mode starts as Default
   renderAll();
+  setTimetableMode('default');
 
   // Default to Today tab on phones
   if (!window.matchMedia("(min-width: 900px)").matches){
