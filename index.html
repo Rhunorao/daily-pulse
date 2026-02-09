@@ -92,6 +92,43 @@
       gap:8px;
       flex-wrap:nowrap;
     }
+    .headerLeft{ display:flex; align-items:center; justify-content:flex-start; }
+    .drawerBackdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.45);
+      display:none;
+      z-index: 60;
+    }
+    .drawerBackdrop.open{ display:block; }
+    .drawer{
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width: min(320px, 86vw);
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 18px 70px rgba(0,0,0,.45);
+      transform: translateX(-105%);
+      transition: transform .18s ease-out;
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+    .drawerBackdrop.open .drawer{ transform: translateX(0); }
+    .drawerTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .drawerTitle{ font-weight: 900; letter-spacing: .02em; }
+    .drawerNav{ display:grid; gap:8px; margin-top: 4px; }
+    .drawerItem{
+      text-align:left;
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      background: var(--panel2);
+      border:1px solid var(--border);
+      font-weight: 800;
+    }
+    .drawerItem:hover{ filter: brightness(1.06); }
+    .drawerFoot{ margin-top:auto; padding-top:10px; border-top:1px solid var(--border); }
 
     .dateWrap{
       display:flex;
@@ -389,11 +426,14 @@
 <body>
 <header>
   <div class="wrap headerBar">
-    <div></div>
+    <div class="headerLeft">
+      <button class="smallbtn iconBtn" id="menuBtn" title="Menu" aria-label="Open menu">☰</button>
+    </div>
 
     <div class="brand" aria-label="Daily Pulse">
       <div class="brandText">
         <h1>Daily Pulse</h1>
+        <div class="muted" style="margin-top:2px;">Checklist • Logs • Stats</div>
       </div>
     </div>
 
@@ -406,6 +446,26 @@
     </div>
   </div>
 </header>
+
+<!-- Side drawer -->
+<div class="drawerBackdrop" id="drawerBackdrop" aria-hidden="true">
+  <aside class="drawer" id="drawer" role="dialog" aria-label="Menu">
+    <div class="drawerTop">
+      <div class="drawerTitle">Daily Pulse</div>
+      <button class="smallbtn iconBtn" id="drawerCloseBtn" aria-label="Close menu">✕</button>
+    </div>
+
+    <nav class="drawerNav" aria-label="Navigation">
+      <button class="drawerItem" type="button" data-go="today">Checklist</button>
+      <button class="drawerItem" type="button" data-go="stats">Stats</button>
+      <button class="drawerItem" type="button" data-go="downloads">Logs</button>
+      <button class="drawerItem" type="button" data-go="timetable">Timetable</button>
+      <button class="drawerItem" type="button" data-go="settings">Settings</button>
+    </nav>
+
+    <div class="drawerFoot muted">Use Timetable to plan your day, then track it with the checklist.</div>
+  </aside>
+</div>
 
 <div class="page">
   <div class="tabs" role="tablist" aria-label="Bottom navigation">
@@ -470,6 +530,21 @@
   </section>
 
   <section class="section" id="sectionDownloads">
+  <section class="section" id="sectionTimetable">
+    <div class="card">
+      <h2 style="margin:0 0 6px 0;">Timetable</h2>
+      <div class="muted">Plan today’s schedule. It saves automatically.</div>
+
+      <div class="divider"></div>
+
+      <div class="row" style="justify-content: space-between; align-items:center;">
+        <div class="pill" id="ttDatePill">Today</div>
+        <button class="smallbtn" id="addSlotBtn">+ Add slot</button>
+      </div>
+
+      <div id="timetableList" style="margin-top:12px; display:grid; gap:10px;"></div>
+    </div>
+  </section>
     <div class="card">
       <h2 style="margin:0 0 6px 0;">Downloads</h2>
       <div class="muted">Export your data for the selected date or all history.</div>
@@ -588,6 +663,40 @@
   </div>
 </div>
 
+<!-- Timetable Modal -->
+<div class="backdrop" id="slotBackdrop" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="row" style="justify-content: space-between;">
+      <h3 id="slotModalTitle">Add slot</h3>
+      <button class="smallbtn" id="slotCloseBtn">Close</button>
+    </div>
+    <div class="muted">Add one block for today’s plan.</div>
+    <div class="divider"></div>
+
+    <div class="qgrid">
+      <label>Start time
+        <input type="time" id="slotStart" />
+      </label>
+      <label>End time
+        <input type="time" id="slotEnd" />
+      </label>
+    </div>
+
+    <label style="margin-top:10px;">Title
+      <input id="slotTitle" placeholder="e.g., Gym" />
+    </label>
+
+    <label style="margin-top:10px;">Notes (optional)
+      <input id="slotNotes" placeholder="e.g., Chest + cardio" />
+    </label>
+
+    <div class="footer">
+      <button class="smallbtn danger" id="slotDeleteBtn" style="display:none;">Delete</button>
+      <button id="slotSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ---------------- Storage model (v2) ----------------
   // db = {
@@ -661,6 +770,28 @@
     goDownloadsBtn: document.getElementById("goDownloadsBtn"),
     wipeBtn2: document.getElementById("wipeBtn2"),
     todayDate: document.getElementById("todayDate"),
+
+    // drawer
+    menuBtn: document.getElementById("menuBtn"),
+    drawerBackdrop: document.getElementById("drawerBackdrop"),
+    drawerCloseBtn: document.getElementById("drawerCloseBtn"),
+
+    // timetable
+    sectionTimetable: document.getElementById("sectionTimetable"),
+    ttDatePill: document.getElementById("ttDatePill"),
+    timetableList: document.getElementById("timetableList"),
+    addSlotBtn: document.getElementById("addSlotBtn"),
+
+    // slot modal
+    slotBackdrop: document.getElementById("slotBackdrop"),
+    slotCloseBtn: document.getElementById("slotCloseBtn"),
+    slotModalTitle: document.getElementById("slotModalTitle"),
+    slotStart: document.getElementById("slotStart"),
+    slotEnd: document.getElementById("slotEnd"),
+    slotTitle: document.getElementById("slotTitle"),
+    slotNotes: document.getElementById("slotNotes"),
+    slotSaveBtn: document.getElementById("slotSaveBtn"),
+    slotDeleteBtn: document.getElementById("slotDeleteBtn"),
   };
 
   function todayISO(){
@@ -712,6 +843,9 @@
     return { ...t, icon: "✅" };
   });
   saveDB();
+  // Timetable storage
+  db.schedule = db.schedule || {}; // { [date]: [ {id,start,end,title,notes} ] }
+  saveDB();
 
   function saveDB(){
     localStorage.setItem(KEY, JSON.stringify(db));
@@ -725,6 +859,7 @@
       today: ui.sectionToday,
       stats: ui.sectionStats,
       downloads: ui.sectionDownloads,
+      timetable: ui.sectionTimetable,
       settings: ui.sectionSettings,
     };
 
@@ -738,7 +873,6 @@
       today: ui.tabToday,
       stats: ui.tabStats,
       downloads: ui.tabDownloads,
-      settings: ui.tabSettings,
     };
     Object.entries(tmap).forEach(([k, btn]) => {
       if (!btn) return;
@@ -747,9 +881,136 @@
 
     // Ensure chart redraw when opening Stats
     if (which === "stats") setTimeout(() => { try { renderStats(); } catch(e){} }, 30);
+    if (which === "timetable") setTimeout(() => { try { renderTimetable(); } catch(e){} }, 30);
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  // Drawer (hamburger) open/close
+  function openDrawer(){
+    if (!ui.drawerBackdrop) return;
+    ui.drawerBackdrop.classList.add('open');
+    ui.drawerBackdrop.setAttribute('aria-hidden','false');
+  }
+  function closeDrawer(){
+    if (!ui.drawerBackdrop) return;
+    ui.drawerBackdrop.classList.remove('open');
+    ui.drawerBackdrop.setAttribute('aria-hidden','true');
+  }
+  if (ui.menuBtn) ui.menuBtn.addEventListener('click', openDrawer);
+  if (ui.drawerCloseBtn) ui.drawerCloseBtn.addEventListener('click', closeDrawer);
+  if (ui.drawerBackdrop) ui.drawerBackdrop.addEventListener('click', (e)=>{ if (e.target === ui.drawerBackdrop) closeDrawer(); });
+  document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDrawer(); });
+
+  // Drawer navigation
+  if (ui.drawerBackdrop){
+    ui.drawerBackdrop.querySelectorAll('[data-go]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const where = btn.getAttribute('data-go');
+        closeDrawer();
+        setTab(where);
+      });
+    });
+  }
+  // ---------------- Timetable ----------------
+  function getSlots(date){
+    db.schedule = db.schedule || {};
+    return Array.isArray(db.schedule[date]) ? db.schedule[date] : [];
+  }
+  function setSlots(date, slots){
+    db.schedule = db.schedule || {};
+    db.schedule[date] = slots;
+    saveDB();
+  }
+
+  function renderTimetable(){
+    const date = todayISO();
+    if (ui.ttDatePill) ui.ttDatePill.textContent = date;
+
+    const slots = getSlots(date).slice().sort((a,b) => (a.start || '').localeCompare(b.start || ''));
+    if (!ui.timetableList) return;
+
+    if (slots.length === 0){
+      ui.timetableList.innerHTML = `<div class="muted">No slots yet. Tap <b>+ Add slot</b> to plan your day.</div>`;
+      return;
+    }
+
+    ui.timetableList.innerHTML = '';
+    slots.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'qblock';
+      const time = `${s.start || '—'} – ${s.end || '—'}`;
+      card.innerHTML = `
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-weight:900;">${escapeHTML(s.title || 'Untitled')}</div>
+            <div class="muted">${escapeHTML(time)}${s.notes ? ' • ' + escapeHTML(s.notes) : ''}</div>
+          </div>
+          <button class="smallbtn">Edit</button>
+        </div>
+      `;
+      card.querySelector('button').addEventListener('click', ()=> openSlotModal(s));
+      ui.timetableList.appendChild(card);
+    });
+  }
+
+  let editingSlotId = null;
+  function openSlotModal(slot){
+    editingSlotId = slot?.id || null;
+
+    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : 'Add slot';
+    if (ui.slotStart) ui.slotStart.value = slot?.start || '';
+    if (ui.slotEnd) ui.slotEnd.value = slot?.end || '';
+    if (ui.slotTitle) ui.slotTitle.value = slot?.title || '';
+    if (ui.slotNotes) ui.slotNotes.value = slot?.notes || '';
+
+    if (ui.slotDeleteBtn) ui.slotDeleteBtn.style.display = editingSlotId ? 'inline-block' : 'none';
+
+    if (ui.slotBackdrop) ui.slotBackdrop.style.display = 'flex';
+    setTimeout(()=>{ try{ ui.slotTitle?.focus(); }catch(e){} }, 50);
+  }
+  function closeSlotModal(){
+    editingSlotId = null;
+    if (ui.slotBackdrop) ui.slotBackdrop.style.display = 'none';
+  }
+
+  if (ui.addSlotBtn) ui.addSlotBtn.addEventListener('click', ()=> openSlotModal(null));
+  if (ui.slotCloseBtn) ui.slotCloseBtn.addEventListener('click', closeSlotModal);
+  if (ui.slotBackdrop) ui.slotBackdrop.addEventListener('click', (e)=>{ if (e.target===ui.slotBackdrop) closeSlotModal(); });
+
+  if (ui.slotSaveBtn) ui.slotSaveBtn.addEventListener('click', ()=>{
+    const date = todayISO();
+    const slots = getSlots(date);
+
+    const start = ui.slotStart?.value || '';
+    const end = ui.slotEnd?.value || '';
+    const title = (ui.slotTitle?.value || '').trim();
+    const notes = (ui.slotNotes?.value || '').trim();
+
+    if (!title){ alert('Please enter a title (e.g., Gym).'); return; }
+
+    if (editingSlotId){
+      const idx = slots.findIndex(s => s.id === editingSlotId);
+      if (idx >= 0){
+        slots[idx] = { ...slots[idx], start, end, title, notes };
+      }
+    } else {
+      slots.push({ id: uuid(), start, end, title, notes });
+    }
+
+    setSlots(date, slots);
+    closeSlotModal();
+    renderTimetable();
+  });
+
+  if (ui.slotDeleteBtn) ui.slotDeleteBtn.addEventListener('click', ()=>{
+    if (!editingSlotId) return;
+    if (!confirm('Delete this slot?')) return;
+    const date = todayISO();
+    const slots = getSlots(date).filter(s => s.id !== editingSlotId);
+    setSlots(date, slots);
+    closeSlotModal();
+    renderTimetable();
+  });
 
   if (ui.tabToday) ui.tabToday.addEventListener("click", () => setTab("today"));
   if (ui.tabStats) ui.tabStats.addEventListener("click", () => setTab("stats"));
@@ -953,7 +1214,7 @@
 
   ui.taskSaveBtn.addEventListener("click", () => {
     if (!currentTask) return;
-    const date = ui.datePicker.value || todayISO();
+    const date = todayISO();
     const day = getDay(date);
 
     day.answers = day.answers || {};
@@ -1647,6 +1908,7 @@
   function renderAll(){
     renderChecklist();
     renderStats();
+    renderTimetable();
   }
 
   // Fill today's date in header
