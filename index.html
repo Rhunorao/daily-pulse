@@ -827,7 +827,6 @@
   const ui = {
     checklist: document.getElementById("checklist"),
     preview: document.getElementById("preview"),
-    wipeBtn: document.getElementById("wipeBtn"),
     fabBtn: document.getElementById("fabBtn"),
 
     // tab buttons
@@ -2188,11 +2187,11 @@
   ui.statsTaskSelect.addEventListener("change", () => renderStats());
   ui.rangeSelect.addEventListener("change", () => renderStats());
 
-  ui.wipeBtn.addEventListener("click", () => {
-    if (!confirm("Delete ALL saved data (tasks + history) from this browser?")) return;
-    localStorage.removeItem(KEY);
-    location.reload();
-  });
+  function clearAllData(){
+  if (!confirm("Delete ALL saved data (tasks + history) from this browser?")) return;
+  localStorage.removeItem(KEY);
+  location.reload();
+  }
 
   // Downloads page actions
   function syncCsvUI(){
@@ -2226,7 +2225,7 @@
     alert("All tasks deleted.");
   });
   if (ui.goDownloadsBtn) ui.goDownloadsBtn.addEventListener("click", () => setTab("downloads"));
-  if (ui.wipeBtn2) ui.wipeBtn2.addEventListener("click", () => ui.wipeBtn.click());
+  if (ui.wipeBtn2) ui.wipeBtn2.addEventListener("click", clearAllData);
 
   // Timetable day selector (7 days)
   if (ui.ttViewDaySelect){
