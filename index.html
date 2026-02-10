@@ -663,9 +663,8 @@
 
       <div class="row" style="justify-content: space-between; align-items:end;">
         <label class="muted" style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:200px;">
-          View day
+          Today-week
           <select id="ttViewDaySelect">
-            <option value="today" selected>Today</option>
             <option value="1">Monday</option>
             <option value="2">Tuesday</option>
             <option value="3">Wednesday</option>
@@ -782,18 +781,23 @@
     <div class="divider"></div>
 
     <div class="qgrid">
-      <label>Day
-        <select id="slotDay">
-          <option value="1">Monday</option>
-          <option value="2">Tuesday</option>
-          <option value="3">Wednesday</option>
-          <option value="4">Thursday</option>
-          <option value="5">Friday</option>
-          <option value="6">Saturday</option>
-          <option value="0">Sunday</option>
-          <option value="all" selected>All week</option>
-        </select>
-      </label>
+      <div>
+        <div style="font-size:12px; color:#b7c3d6; font-weight:800; margin-bottom:6px;">Days</div>
+        <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);">
+          <input type="checkbox" id="slotAllWeek" checked />
+          <span>All week</span>
+        </label>
+        <div id="slotDays" style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; margin-top:10px;">
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="1" /> Monday</label>
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="2" /> Tuesday</label>
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="3" /> Wednesday</label>
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="4" /> Thursday</label>
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="5" /> Friday</label>
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="6" /> Saturday</label>
+          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="0" /> Sunday</label>
+        </div>
+        <div class="muted" style="margin-top:8px;">Tip: turn off “All week” to pick one or more days.</div>
+      </div>
       <label>Start time
         <input type="time" id="slotStart" />
       </label>
@@ -910,7 +914,8 @@
     slotNotes: document.getElementById("slotNotes"),
     slotSaveBtn: document.getElementById("slotSaveBtn"),
     slotDeleteBtn: document.getElementById("slotDeleteBtn"),
-    slotDay: document.getElementById("slotDay"),
+    slotAllWeek: document.getElementById("slotAllWeek"),
+    slotDaysWrap: document.getElementById("slotDays"),
   };
 
   function todayISO(){
@@ -1035,9 +1040,22 @@
   }
 
   // Selected day to view in timetable page
-  let ttViewDayChoice = 'today'; // 'today' or '0'..'6'
+  let ttViewDayChoice = dayKeyFromISO(todayISO()); // '0'..'6'
   function getViewDayKey(){
-    return (ttViewDayChoice === 'today') ? dayKeyFromISO(todayISO()) : String(ttViewDayChoice);
+    return String(ttViewDayChoice);
+  }
+
+  function refreshTimetableDaySelectLabels(){
+    if (!ui.ttViewDaySelect) return;
+    const todayKey = dayKeyFromISO(todayISO());
+    const optMap = {
+      '1':'Monday', '2':'Tuesday', '3':'Wednesday', '4':'Thursday',
+      '5':'Friday', '6':'Saturday', '0':'Sunday'
+    };
+    [...ui.ttViewDaySelect.options].forEach(o => {
+      const base = optMap[o.value] || o.textContent;
+      o.textContent = (o.value === todayKey) ? `${base} — Today` : base;
+    });
   }
 
   function to12h(t){
@@ -1054,6 +1072,7 @@
   function renderTimetable(){
     const viewKey = getViewDayKey();
     const viewLabel = DAY_LABEL[viewKey] || 'Day';
+    refreshTimetableDaySelectLabels();
 
     const slots = getWeeklySlots(viewKey)
       .slice()
@@ -1101,6 +1120,35 @@
   let editingSlotId = null;
   let editingDayKey = null;
 
+  function getCheckedSlotDays(){
+    if (!ui.slotDaysWrap) return [];
+    return [...ui.slotDaysWrap.querySelectorAll('input.slotDay')]
+      .filter(cb => cb.checked)
+      .map(cb => String(cb.value));
+  }
+
+  function setCheckedSlotDays(dayKeys){
+    if (!ui.slotDaysWrap) return;
+    const set = new Set((dayKeys || []).map(String));
+    [...ui.slotDaysWrap.querySelectorAll('input.slotDay')].forEach(cb => {
+      cb.checked = set.has(String(cb.value));
+    });
+  }
+
+  function wireAllWeekToggle(){
+    if (!ui.slotAllWeek || !ui.slotDaysWrap) return;
+    const setDisabled = (on) => {
+      ui.slotDaysWrap.style.opacity = on ? '0.55' : '1';
+      [...ui.slotDaysWrap.querySelectorAll('input.slotDay')].forEach(cb => cb.disabled = on);
+    };
+    setDisabled(ui.slotAllWeek.checked);
+    ui.slotAllWeek.onchange = () => {
+      const on = ui.slotAllWeek.checked;
+      setDisabled(on);
+      if (on) setCheckedSlotDays([]);
+    };
+  }
+
   function openSlotModal(slot, dayKey){
     editingSlotId = slot?.id || null;
     editingDayKey = dayKey || getViewDayKey();
@@ -1108,10 +1156,15 @@
     const viewLabel = DAY_LABEL[editingDayKey] || 'Day';
     if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${viewLabel})`;
 
-    // Default day selection to the day being edited/viewed
-    if (ui.slotDay){
-      // New slots default to All week; edits stay on their day
-      ui.slotDay.value = editingSlotId ? String(editingDayKey) : 'all';
+    // Day selection
+    wireAllWeekToggle();
+    if (ui.slotAllWeek){
+      ui.slotAllWeek.checked = !editingSlotId; // new = all week, edit = single day
+    }
+    if (!editingSlotId){
+      setCheckedSlotDays([]);
+    } else {
+      setCheckedSlotDays([String(editingDayKey)]);
     }
 
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
@@ -1308,10 +1361,14 @@
 
     if (!title){ alert('Please enter a title (e.g., Gym).'); return; }
 
-    const sel = ui.slotDay?.value || String(getViewDayKey());
-    const targetKeys = (sel === 'all')
-      ? ['0','1','2','3','4','5','6']
-      : [String(sel)];
+    const allWeek = !!ui.slotAllWeek?.checked;
+    const picked = getCheckedSlotDays();
+    const targetKeys = allWeek ? ['0','1','2','3','4','5','6'] : picked;
+
+    if (!allWeek && targetKeys.length === 0){
+      alert('Select at least one day, or turn on “All week”.');
+      return;
+    }
 
     targetKeys.forEach(k => {
       const slots = getWeeklySlots(k).slice();
@@ -2241,8 +2298,9 @@
 
   // Timetable day selector (7 days)
   if (ui.ttViewDaySelect){
-    ui.ttViewDaySelect.value = 'today';
-    ttViewDayChoice = 'today';
+    refreshTimetableDaySelectLabels();
+    ui.ttViewDaySelect.value = dayKeyFromISO(todayISO());
+    ttViewDayChoice = ui.ttViewDaySelect.value;
 
     ui.ttViewDaySelect.addEventListener('change', () => {
       ttViewDayChoice = ui.ttViewDaySelect.value;
@@ -2321,6 +2379,7 @@
   }
 
   renderAll();
+  try { refreshTimetableDaySelectLabels(); } catch(e){}
 
   // Default to Today tab on phones
   if (!window.matchMedia("(min-width: 900px)").matches){
