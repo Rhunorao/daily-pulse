@@ -535,11 +535,29 @@
     }
     .modal{
       width: min(560px, calc(100vw - 24px));
-      background:var(--panel); border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1)); border-radius:16px;
-      padding:14px; box-shadow: 0 18px 70px rgba(0,0,0,.55);
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background:var(--panel);
+      border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1));
+      border-radius:16px;
+      padding:14px;
+      box-shadow: 0 18px 70px rgba(0,0,0,.55);
+      scroll-padding-bottom: 80px;
     }
     .modal h3{ margin:0 0 8px 0; }
-    .modal .footer{ display:flex; gap:10px; justify-content:flex-end; margin-top: 12px; }
+    .modal .footer{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top: 12px;
+      position: sticky;
+      bottom: -14px; /* compensate modal padding */
+      background: var(--panel);
+      padding: 12px 0 6px;
+      border-top: 1px solid var(--border);
+      z-index: 2;
+    }
     .modal label{ font-size:12px; color:#b7c3d6; display:block; margin-top:10px; }
     .modal input, .modal select{ width: 100%; margin-top:6px; font-size:16px; }
 
