@@ -657,7 +657,7 @@
   <section class="section" id="sectionTimetable">
     <div class="card">
       <h2 style="margin:0 0 6px 0;">Timetable</h2>
-      <div class="muted">Plan today’s schedule. It saves automatically.</div>
+      <!-- <div class="muted">Plan today’s schedule. It saves automatically.</div> -->
 
       <div class="divider"></div>
 
@@ -665,6 +665,7 @@
         <label class="muted" style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:200px;">
           View day
           <select id="ttViewDaySelect">
+            <option value="today" selected>Today</option>
             <option value="1">Monday</option>
             <option value="2">Tuesday</option>
             <option value="3">Wednesday</option>
@@ -674,7 +675,7 @@
             <option value="0">Sunday</option>
           </select>
         </label>
-        <div class="pill" id="ttDatePill">Weekly timetable • repeats every week</div>
+        <!-- <div class="pill" id="ttDatePill">Weekly timetable • repeats every week</div> -->
       </div>
 
       <div id="timetableList" class="timetableList"></div>
@@ -790,7 +791,7 @@
           <option value="5">Friday</option>
           <option value="6">Saturday</option>
           <option value="0">Sunday</option>
-          <option value="all">All week</option>
+          <option value="all" selected>All week</option>
         </select>
       </label>
       <label>Start time
@@ -895,7 +896,7 @@
 
     // timetable
     sectionTimetable: document.getElementById("sectionTimetable"),
-    ttDatePill: document.getElementById("ttDatePill"),
+    // ttDatePill: document.getElementById("ttDatePill"),
     timetableList: document.getElementById("timetableList"),
     ttViewDaySelect: document.getElementById("ttViewDaySelect"),
 
@@ -1033,16 +1034,26 @@
     saveDB();
   }
 
-  // Selected day to view in timetable page (defaults to today's day)
-  let ttViewDayKey = dayKeyFromISO(todayISO());
+  // Selected day to view in timetable page
+  let ttViewDayChoice = 'today'; // 'today' or '0'..'6'
+  function getViewDayKey(){
+    return (ttViewDayChoice === 'today') ? dayKeyFromISO(todayISO()) : String(ttViewDayChoice);
+  }
+
+  function to12h(t){
+    if (!t) return '—';
+    const parts = String(t).split(':');
+    let h = Number(parts[0] || 0);
+    const m = parts[1] || '00';
+    const ampm = (h >= 12) ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${h}:${m} ${ampm}`;
+  }
 
   function renderTimetable(){
-    const viewKey = ttViewDayKey;
+    const viewKey = getViewDayKey();
     const viewLabel = DAY_LABEL[viewKey] || 'Day';
-
-    if (ui.ttDatePill){
-      ui.ttDatePill.textContent = `Weekly timetable • ${viewLabel}`;
-    }
 
     const slots = getWeeklySlots(viewKey)
       .slice()
@@ -1065,11 +1076,11 @@
       const row = document.createElement('div');
       row.className = 'ttRow';
 
-      const time = `${s.start || '—'} – ${s.end || '—'}`;
+      const time = `${to12h(s.start)} – ${to12h(s.end)}`;
       const notes = s.notes ? escapeHTML(s.notes) : '';
 
       row.innerHTML = `
-        <div class="ttTimeCol">${escapeHTML(s.start || '—')}</div>
+        <div class="ttTimeCol">${escapeHTML(to12h(s.start))}</div>
         <div class="ttRail"><div class="ttDot"></div></div>
         <div class="ttCard">
           <div class="ttCardTop">
@@ -1092,14 +1103,15 @@
 
   function openSlotModal(slot, dayKey){
     editingSlotId = slot?.id || null;
-    editingDayKey = dayKey || ttViewDayKey;
+    editingDayKey = dayKey || getViewDayKey();
 
     const viewLabel = DAY_LABEL[editingDayKey] || 'Day';
     if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${viewLabel})`;
 
     // Default day selection to the day being edited/viewed
     if (ui.slotDay){
-      ui.slotDay.value = String(editingDayKey);
+      // New slots default to All week; edits stay on their day
+      ui.slotDay.value = editingSlotId ? String(editingDayKey) : 'all';
     }
 
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
@@ -1296,7 +1308,7 @@
 
     if (!title){ alert('Please enter a title (e.g., Gym).'); return; }
 
-    const sel = ui.slotDay?.value || String(ttViewDayKey);
+    const sel = ui.slotDay?.value || String(getViewDayKey());
     const targetKeys = (sel === 'all')
       ? ['0','1','2','3','4','5','6']
       : [String(sel)];
@@ -1319,7 +1331,7 @@
   if (ui.slotDeleteBtn) ui.slotDeleteBtn.addEventListener('click', ()=>{
     if (!editingSlotId) return;
     if (!confirm('Delete this slot?')) return;
-    const k = String(editingDayKey || ttViewDayKey);
+    const k = String(editingDayKey || getViewDayKey());
     const slots = getWeeklySlots(k).filter(s => s.id !== editingSlotId);
     setWeeklySlots(k, slots);
     closeSlotModal();
@@ -2064,7 +2076,7 @@
     ui.manageBackdrop.style.display = "none";
   }
 
-  ui.fabBtn.addEventListener("click", openManage);
+  // ui.fabBtn.addEventListener("click", openManage);
   ui.manageCloseBtn.addEventListener("click", closeManage);
   ui.manageBackdrop.addEventListener("click", (e) => { if (e.target === ui.manageBackdrop) closeManage(); });
 
@@ -2229,12 +2241,11 @@
 
   // Timetable day selector (7 days)
   if (ui.ttViewDaySelect){
-    // default select to TODAY
-    ui.ttViewDaySelect.value = dayKeyFromISO(todayISO());
-    ttViewDayKey = ui.ttViewDaySelect.value;
+    ui.ttViewDaySelect.value = 'today';
+    ttViewDayChoice = 'today';
 
     ui.ttViewDaySelect.addEventListener('change', () => {
-      ttViewDayKey = ui.ttViewDaySelect.value;
+      ttViewDayChoice = ui.ttViewDaySelect.value;
       renderTimetable();
     });
   }
