@@ -265,11 +265,69 @@
       background:var(--panel2); color:var(--text); border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1));
       border-radius:12px; padding:10px 12px; outline:none;
     }
+    /* Consistent field sizing across iOS (time/date/text) */
+    input, select, textarea{
+      border-radius:14px;
+      height:44px;
+      padding:10px 12px;
+      line-height:22px;
+      font-size:16px;
+    }
+    textarea{ height:auto; min-height:44px; }
+    input[type="time"], input[type="date"]{ height:44px; }
     input[type="date"]{ padding:9px 10px; }
     button{ cursor:pointer; border:1px solid color-mix(in srgb, var(--border) 75%, var(--accent1)); }
     button:hover{ filter: brightness(1.08); }
     .danger{ border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
     .smallbtn{ padding:8px 10px; font-size:12px; border-radius:12px; }
+    /* Slot day chips (S M T W T F S) */
+    .allWeekRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin:0;
+      font-size:14px;
+      color:var(--text);
+    }
+
+    .dayChips{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap:8px;
+      width:100%;
+    }
+
+    .chip{
+      display:block;
+      margin:0;
+      user-select:none;
+    }
+
+    .chip input{
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .chip span{
+      display:grid;
+      place-items:center;
+      height:40px;
+      border-radius:14px;
+      border:1px solid color-mix(in srgb, var(--accent1) 30%, var(--border));
+      background: color-mix(in srgb, var(--panel2) 86%, transparent);
+      font-weight:950;
+      letter-spacing:.02em;
+      color:var(--muted2);
+    }
+
+    .chip input:checked + span{
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent2) 22%, transparent), color-mix(in srgb, var(--accent1) 12%, transparent)), var(--panel2);
+      border-color: color-mix(in srgb, var(--accent1) 55%, var(--border));
+      color: var(--text);
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+    }
 
     /* Removed duplicate .tabs that hid tabs on all devices */
     .tab{
@@ -631,15 +689,15 @@
             </select>
           </label>
 
-          <div id="rangeInputs" style="display:none;">
-            <div class="dlRow" style="grid-template-columns: 1fr 1fr;">
-              <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+          <div id="rangeInputs" style="display:none; width:100%;">
+            <div class="dlRow" style="grid-template-columns: 1fr 1fr; width:100%;">
+              <label class="muted" style="display:flex; flex-direction:column; gap:6px; width:100%; min-width:0;">
                 From
-                <input type="date" id="dlFrom" />
+                <input type="date" id="dlFrom" style="width:100%;" />
               </label>
-              <label class="muted" style="display:flex; flex-direction:column; gap:6px;">
+              <label class="muted" style="display:flex; flex-direction:column; gap:6px; width:100%; min-width:0;">
                 To
-                <input type="date" id="dlTo" />
+                <input type="date" id="dlTo" style="width:100%;" />
               </label>
             </div>
           </div>
@@ -782,21 +840,24 @@
 
     <div class="qgrid">
       <div>
-        <div style="font-size:12px; color:#b7c3d6; font-weight:800; margin-bottom:6px;">Days</div>
-        <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);">
+        <div style="font-size:12px; color:#b7c3d6; font-weight:800; margin-bottom:8px;">Days</div>
+
+        <label class="allWeekRow">
           <input type="checkbox" id="slotAllWeek" checked />
           <span>All week</span>
         </label>
-        <div id="slotDays" style="display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:8px; margin-top:10px;">
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="1" /> Monday</label>
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="2" /> Tuesday</label>
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="3" /> Wednesday</label>
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="4" /> Thursday</label>
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="5" /> Friday</label>
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="6" /> Saturday</label>
-          <label style="display:flex; gap:10px; align-items:center; margin:0; font-size:14px; color:var(--text);"><input type="checkbox" class="slotDay" value="0" /> Sunday</label>
+
+        <div id="slotDays" class="dayChips" aria-label="Select days">
+          <label class="chip" title="Sunday"><input type="checkbox" class="slotDay" value="0" checked /><span>S</span></label>
+          <label class="chip" title="Monday"><input type="checkbox" class="slotDay" value="1" checked /><span>M</span></label>
+          <label class="chip" title="Tuesday"><input type="checkbox" class="slotDay" value="2" checked /><span>T</span></label>
+          <label class="chip" title="Wednesday"><input type="checkbox" class="slotDay" value="3" checked /><span>W</span></label>
+          <label class="chip" title="Thursday"><input type="checkbox" class="slotDay" value="4" checked /><span>T</span></label>
+          <label class="chip" title="Friday"><input type="checkbox" class="slotDay" value="5" checked /><span>F</span></label>
+          <label class="chip" title="Saturday"><input type="checkbox" class="slotDay" value="6" checked /><span>S</span></label>
         </div>
-        <div class="muted" style="margin-top:8px;">Tip: turn off “All week” to pick one or more days.</div>
+
+        <div class="muted" style="margin-top:10px;">Tip: turn off “All week” to pick one or more days.</div>
       </div>
       <label>Start time
         <input type="time" id="slotStart" />
@@ -1137,15 +1198,30 @@
 
   function wireAllWeekToggle(){
     if (!ui.slotAllWeek || !ui.slotDaysWrap) return;
+
+    const allDays = ['0','1','2','3','4','5','6'];
+
     const setDisabled = (on) => {
-      ui.slotDaysWrap.style.opacity = on ? '0.55' : '1';
+      ui.slotDaysWrap.style.opacity = on ? '0.75' : '1';
       [...ui.slotDaysWrap.querySelectorAll('input.slotDay')].forEach(cb => cb.disabled = on);
     };
-    setDisabled(ui.slotAllWeek.checked);
+
+    // Default state: All week ON -> all chips selected + disabled
+    if (ui.slotAllWeek.checked){
+      setCheckedSlotDays(allDays);
+      setDisabled(true);
+    } else {
+      setDisabled(false);
+    }
+
     ui.slotAllWeek.onchange = () => {
       const on = ui.slotAllWeek.checked;
-      setDisabled(on);
-      if (on) setCheckedSlotDays([]);
+      if (on){
+        setCheckedSlotDays(allDays);
+        setDisabled(true);
+      } else {
+        setDisabled(false);
+      }
     };
   }
 
@@ -1157,15 +1233,17 @@
     if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${viewLabel})`;
 
     // Day selection
-    wireAllWeekToggle();
     if (ui.slotAllWeek){
-      ui.slotAllWeek.checked = !editingSlotId; // new = all week, edit = single day
+      ui.slotAllWeek.checked = !editingSlotId; // new = all week, edit = pick day(s)
     }
     if (!editingSlotId){
-      setCheckedSlotDays([]);
+      // all week default shows all selected
+      setCheckedSlotDays(['0','1','2','3','4','5','6']);
     } else {
+      // editing: default to the day being edited
       setCheckedSlotDays([String(editingDayKey)]);
     }
+    wireAllWeekToggle();
 
     if (ui.slotStart) ui.slotStart.value = slot?.start || '';
     if (ui.slotEnd) ui.slotEnd.value = slot?.end || '';
