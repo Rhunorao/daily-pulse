@@ -596,43 +596,12 @@
 
 
   <div class="tabs" role="tablist" aria-label="Bottom navigation">
-      <button class="tab active" id="tabToday" type="button" aria-label="Checklist"><span class="ico">✅</span><span class="lbl">Checklist</span></button>
-      <button class="tab" id="tabStats" type="button" aria-label="Stats"><span class="ico">📈</span><span class="lbl">Stats</span></button>
-      <button class="tab" id="tabDownloads" type="button" aria-label="Downloads"><span class="ico">⬇️</span><span class="lbl">Downloads</span></button>
-      <button class="tab" id="tabTimetable" type="button" aria-label="Timetable"><span class="ico">🗓️</span><span class="lbl">Timetable</span></button>
-      <button class="tab" id="tabSettings" type="button" aria-label="Settings"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
-    </div>
-  
-  <div class="allWeekRow">
-    <label>
-      <input type="checkbox" id="allWeekCheckbox" />
-      All Week
-    </label>
+    <button class="tab active" id="tabToday" type="button" aria-label="Checklist"><span class="ico">✅</span><span class="lbl">Checklist</span></button>
+    <button class="tab" id="tabStats" type="button" aria-label="Stats"><span class="ico">📈</span><span class="lbl">Stats</span></button>
+    <button class="tab" id="tabDownloads" type="button" aria-label="Downloads"><span class="ico">⬇️</span><span class="lbl">Downloads</span></button>
+    <button class="tab" id="tabTimetable" type="button" aria-label="Timetable"><span class="ico">🗓️</span><span class="lbl">Timetable</span></button>
+    <button class="tab" id="tabSettings" type="button" aria-label="Settings"><span class="ico">⚙️</span><span class="lbl">Settings</span></button>
   </div>
-  
-  <div id="weekLine" class="dayChips" style="display: none;">
-    <button class="segBtn">S</button>
-    <button class="segBtn">M</button>
-    <button class="segBtn">T</button>
-    <button class="segBtn">W</button>
-    <button class="segBtn">T</button>
-    <button class="segBtn">F</button>
-    <button class="segBtn">S</button>
-  </div>
-  
-  <div id="timetable">
-    <!-- Timetable content -->
-  </div>
-  
-  <div>
-    <button id="clearDataBtn">Clear Data</button>
-    <button id="clearTimetableBtn">Clear Timetable</button>
-  </div>
-  
-  <ul id="taskList">
-    <li>Gym</li>
-    <li>Reading</li>
-  </ul>
 
 <div class="page">
 
@@ -789,6 +758,7 @@
       <h3 style="margin:0 0 8px 0;">Data</h3>
       <div class="row" style="gap:10px; flex-wrap:wrap;">
         <button class="smallbtn" id="goDownloadsBtn">Go to Downloads</button>
+        <button class="smallbtn" id="clearTimetableBtn">Clear timetable</button>
         <button class="smallbtn danger" id="wipeBtn2">Clear all data</button>
       </div>
       <div class="muted" style="margin-top:6px;">Wipe deletes tasks + history from this device/browser.</div>
@@ -914,44 +884,6 @@
 </div>
 
 <script>
-  // ---------------- DOMContentLoaded Event Listener ----------------
-  document.addEventListener("DOMContentLoaded", () => {
-    const allWeekCheckbox = document.getElementById("allWeekCheckbox");
-    const weekLine = document.getElementById("weekLine");
-    const clearDataBtn = document.getElementById("clearDataBtn");
-    const clearTimetableBtn = document.getElementById("clearTimetableBtn");
-    const taskList = document.getElementById("taskList");
-
-    // Toggle week line visibility based on "All Week" checkbox
-    allWeekCheckbox.addEventListener("change", () => {
-      weekLine.style.display = allWeekCheckbox.checked ? "none" : "grid";
-    });
-
-    // Clear data functionality
-    clearDataBtn.addEventListener("click", () => {
-      // Clear only entered data, keep default tasks
-      const tasks = Array.from(taskList.children);
-      tasks.forEach((task) => {
-        if (!["Gym", "Reading"].includes(task.textContent)) {
-          task.remove();
-        }
-      });
-    });
-
-    // Clear timetable functionality
-    clearTimetableBtn.addEventListener("click", () => {
-      const timetable = document.getElementById("timetable");
-      timetable.innerHTML = ""; // Clear timetable content
-    });
-
-    // Delete task functionality
-    taskList.addEventListener("click", (event) => {
-      if (event.target.tagName === "LI") {
-        event.target.remove();
-      }
-    });
-  });
-
   // ---------------- Storage model (v2) ----------------
   // db = {
   //   tasks: [ { id, name, questions:[{ key, label, type }] } ],
@@ -1265,31 +1197,32 @@
     });
   }
 
-  function wireAllWeekToggle(){
+  function wireAllWeekToggle() {
     if (!ui.slotAllWeek || !ui.slotDaysWrap) return;
 
-    const allDays = ['0','1','2','3','4','5','6'];
+    const allDays = ['0', '1', '2', '3', '4', '5', '6'];
 
-    const setDisabled = (on) => {
-      ui.slotDaysWrap.style.opacity = on ? '0.75' : '1';
-      [...ui.slotDaysWrap.querySelectorAll('input.slotDay')].forEach(cb => cb.disabled = on);
+    const setUI = (allWeekOn) => {
+      // show chips only when All week is OFF
+      ui.slotDaysWrap.style.display = allWeekOn ? 'none' : 'grid';
+      // always keep chips enabled when visible
+      [...ui.slotDaysWrap.querySelectorAll('input.slotDay')].forEach(cb => cb.disabled = false);
     };
 
-    // Default state: All week ON -> all chips selected + disabled
-    if (ui.slotAllWeek.checked){
-      setCheckedSlotDays(allDays);
-      setDisabled(true);
+    // initial state
+    if (ui.slotAllWeek.checked) {
+      setCheckedSlotDays(allDays);     // default all selected
+      setUI(true);                    // hide chips
     } else {
-      setDisabled(false);
+      setUI(false);                   // show chips
     }
 
     ui.slotAllWeek.onchange = () => {
-      const on = ui.slotAllWeek.checked;
-      if (on){
+      if (ui.slotAllWeek.checked) {
         setCheckedSlotDays(allDays);
-        setDisabled(true);
+        setUI(true);                  // hide chips
       } else {
-        setDisabled(false);
+        setUI(false);                 // show chips
       }
     };
   }
@@ -2403,10 +2336,13 @@
   ui.statsTaskSelect.addEventListener("change", () => renderStats());
   ui.rangeSelect.addEventListener("change", () => renderStats());
 
-  function clearAllData(){
-  if (!confirm("Delete ALL saved data (tasks + history) from this browser?")) return;
-  localStorage.removeItem(KEY);
-  location.reload();
+  function clearAllData() {
+    if (!confirm("Clear ALL entered logs/history on this device? (Tasks and timetable will stay)")) return;
+    db.days = {};           // only logs
+    saveDB();
+    if (ui.downloadLinkArea) ui.downloadLinkArea.innerHTML = "";
+    renderAll();
+    alert("Logs cleared. Your tasks and timetable are kept.");
   }
 
   // Downloads page actions
