@@ -383,7 +383,7 @@
       display:flex;
       flex-direction:column;
       gap:14px;
-      align-items:center;
+      align-items:stretch;
       box-sizing:border-box;
     }
 
@@ -957,6 +957,7 @@
     deleteAllTasksBtn: document.getElementById("deleteAllTasksBtn"),
     goDownloadsBtn: document.getElementById("goDownloadsBtn"),
     wipeBtn2: document.getElementById("wipeBtn2"),
+    clearTimetableBtn: document.getElementById("clearTimetableBtn"),
     // todayDate: document.getElementById("todayDate"),
 
 
@@ -2337,13 +2338,32 @@
   ui.rangeSelect.addEventListener("change", () => renderStats());
 
   function clearAllData() {
-    if (!confirm("Clear ALL entered logs/history on this device? (Tasks and timetable will stay)")) return;
-    db.days = {};           // only logs
+    if (!confirm("Clear ALL daily logs and answers? Tasks and timetable will stay.")) return;
+
+    db.days = {};   // 🔥 clears ONLY daily entries
     saveDB();
-    if (ui.downloadLinkArea) ui.downloadLinkArea.innerHTML = "";
     renderAll();
-    alert("Logs cleared. Your tasks and timetable are kept.");
+
+    alert("Daily logs cleared. Tasks and timetable are intact.");
   }
+  
+  function clearTimetable(){
+    if (!confirm("Clear the weekly timetable? (This removes all slots)")) return;
+  
+    db.schedule = db.schedule || {};
+    db.schedule.weekly = {};
+  
+    for (const d of ['0','1','2','3','4','5','6']) {
+      db.schedule.weekly[d] = [];
+    }
+  
+    saveDB();
+    renderTimetable();
+    alert("Timetable cleared.");
+  }
+  
+  if (ui.clearTimetableBtn)
+    ui.clearTimetableBtn.addEventListener("click", clearTimetable);
 
   // Downloads page actions
   function syncCsvUI(){
