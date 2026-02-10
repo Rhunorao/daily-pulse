@@ -289,6 +289,13 @@
       font-size:14px;
       color:var(--text);
     }
+    .allWeekRow input{
+      width:18px;
+      height:18px;
+      border-radius:6px;
+      padding:0;
+      margin:0;
+    }
 
     .dayChips{
       margin-top:10px;
@@ -833,16 +840,13 @@
 <div class="backdrop" id="slotBackdrop" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="row" style="justify-content: space-between;">
-      <h3 id="slotModalTitle">Add slot</h3>
+      <h3 id="slotModalTitle">Slot</h3>
       <button class="smallbtn" id="slotCloseBtn">Close</button>
     </div>
-    <div class="muted">Add one block for today’s plan.</div>
     <div class="divider"></div>
 
     <div class="qgrid">
       <div>
-        <div style="font-size:12px; color:#b7c3d6; font-weight:800; margin-bottom:8px;">Days</div>
-
         <label class="allWeekRow">
           <input type="checkbox" id="slotAllWeek" checked />
           <span>All week</span>
@@ -857,8 +861,6 @@
           <label class="chip" title="Friday"><input type="checkbox" class="slotDay" value="5" checked /><span>F</span></label>
           <label class="chip" title="Saturday"><input type="checkbox" class="slotDay" value="6" checked /><span>S</span></label>
         </div>
-
-        <div class="muted" style="margin-top:10px;">Tip: turn off “All week” to pick one or more days.</div>
       </div>
       <label>Start time
         <input type="time" id="slotStart" />
@@ -872,8 +874,8 @@
       <input id="slotTitle" placeholder="e.g., Gym" />
     </label>
 
-    <label style="margin-top:10px;">Notes (optional)
-      <input id="slotNotes" placeholder="e.g., Chest + cardio" />
+    <label style="margin-top:10px;">Notes
+      <input id="slotNotes" placeholder="Notes" />
     </label>
 
     <div class="footer">
@@ -1220,10 +1222,13 @@
 
     ui.slotAllWeek.onchange = () => {
       if (ui.slotAllWeek.checked) {
+        // All week ON: select all (hidden anyway)
         setCheckedSlotDays(allDays);
-        setUI(true);                  // hide chips
+        setUI(true);
       } else {
-        setUI(false);                 // show chips
+        // All week OFF: show chips and let the user choose (start empty)
+        setCheckedSlotDays([]);
+        setUI(false);
       }
     };
   }
@@ -1232,8 +1237,8 @@
     editingSlotId = slot?.id || null;
     editingDayKey = dayKey || getViewDayKey();
 
-    const viewLabel = DAY_LABEL[editingDayKey] || 'Day';
-    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : `Add slot (${viewLabel})`;
+    // Slot modal title: do not show day name in the title
+    if (ui.slotModalTitle) ui.slotModalTitle.textContent = editingSlotId ? 'Edit slot' : 'Add slot';
 
     // Day selection
     if (ui.slotAllWeek){
